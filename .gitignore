@@ -31,6 +31,10 @@ yarn-error.*
 
 # environment variables
 .env
+
+# generated native projects (CI generates them via expo prebuild)
+android/
+ios/
 *.pem
 
 # local env files

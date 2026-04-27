@@ -1,0 +1,92 @@
+name: Build Android Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Expo and prebuild
+        run: npx expo prebuild --platform android --clean
+
+      - name: Enable ABI splits for per-architecture APKs
+        run: node .github/scripts/configure-splits.js
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+
+      - name: Build release APKs (per architecture)
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Build release AAB (universal)
+        run: |
+          cd android
+          ./gradlew bundleRelease
+
+      - name: Rename APKs with architecture suffix
+        run: |
+          cd android/app/build/outputs/apk/release
+          for apk in *.apk; do
+            case "$apk" in
+              *armeabi*|*armeabi-v7a*) suffix="armeabi-v7a" ;;
+              *arm64*)                suffix="arm64-v8a" ;;
+              *x86_64*)              suffix="x86_64" ;;
+              *)                      suffix="universal" ;;
+            esac
+            mv "$apk" "GithubStarsManager-${suffix}.apk"
+          done
+
+      - name: Rename AAB
+        run: |
+          cd android/app/build/outputs/bundle/release
+          mv *.aab GithubStarsManager-release.aab
+
+      - name: Upload per-architecture APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apks
+          path: android/app/build/outputs/apk/release/GithubStarsManager-*.apk
+          if-no-files-found: error
+
+      - name: Upload release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: android/app/build/outputs/bundle/release/GithubStarsManager-release.aab
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            android/app/build/outputs/apk/release/GithubStarsManager-*.apk
+            android/app/build/outputs/bundle/release/GithubStarsManager-release.aab
+          generate_release_notes: true
