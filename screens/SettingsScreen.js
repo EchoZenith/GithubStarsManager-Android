@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import {
   getGitHubToken, clearGitHubToken,
   getTotalRepoCount,
@@ -242,7 +243,7 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
                     <Text style={styles.updateBadgeText}>有新版本</Text>
                   </View>
                 ) : null}
-                <Text style={styles.aboutValue}>1.0.0</Text>
+                <Text style={styles.aboutValue}>{Constants.expoConfig?.version || '1.0.0'}</Text>
                 <Ionicons name="chevron-forward" size={18} color="#ccc" />
               </View>
             </View>
