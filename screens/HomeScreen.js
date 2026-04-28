@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, FlatList, StyleSheet, TouchableOpacity,
   Alert, ActivityIndicator, RefreshControl,
@@ -29,6 +29,7 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
   const [syncInfo, setSyncInfo] = useState('');
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
   const [aiProgress, setAiProgress] = useState({ current: 0, total: 0, label: '' });
+  const cancelAiRef = useRef(false);
 
   // 按分类加载仓库列表
   const loadRepos = useCallback(async (catId) => {
@@ -128,6 +129,10 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
 
   // AI 批量分析
   const handleAiAnalyze = () => {
+    if (aiAnalyzing) {
+      cancelAiRef.current = true;
+      return;
+    }
     Alert.alert('AI 批量分析', '选择要分析的范围', [
       { text: '取消', style: 'cancel' },
       { text: '分析全部', onPress: () => runAiBatch('all') },
@@ -157,12 +162,14 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
       return;
     }
 
+    cancelAiRef.current = false;
     setAiAnalyzing(true);
     setAiProgress({ current: 0, total: targetRepos.length, label: '准备中...' });
 
     let success = 0;
     let fail = 0;
     for (let i = 0; i < targetRepos.length; i++) {
+      if (cancelAiRef.current) break;
       const repo = targetRepos[i];
       setAiProgress({ current: i + 1, total: targetRepos.length, label: repo.full_name });
       try {
@@ -171,7 +178,6 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
         try {
           readmeContent = await fetchReadme(token, repo.full_name);
         } catch {
-          // README 不存在也继续分析
         }
         const result = await analyzeRepository(repo, readmeContent);
         await saveAiAnalysis(repo.repo_id, result.summary, result.tags, result.platforms);
@@ -182,10 +188,15 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
       }
     }
 
+    const wasCancelled = cancelAiRef.current;
     setAiAnalyzing(false);
     setAiProgress({ current: 0, total: 0, label: '' });
     await loadRepos(selectedCategory);
-    Alert.alert('分析完成', `成功 ${success} 个${fail > 0 ? `，失败 ${fail} 个` : ''}`);
+    if (wasCancelled) {
+      Alert.alert('已停止', `已分析 ${success} 个${fail > 0 ? `，失败 ${fail} 个` : ''}`);
+    } else {
+      Alert.alert('分析完成', `成功 ${success} 个${fail > 0 ? `，失败 ${fail} 个` : ''}`);
+    }
   };
 
   const currentCategoryName = selectedCategory === null
@@ -229,14 +240,13 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
               <Ionicons name="folder-open" size={22} color="#0366d6" />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.headerBtn, { backgroundColor: '#f5f0ff' }]}
+              style={[styles.headerBtn, { backgroundColor: aiAnalyzing ? '#fde8e8' : '#f5f0ff' }]}
               onPress={handleAiAnalyze}
-              disabled={aiAnalyzing}
             >
               <Ionicons
-                name={aiAnalyzing ? 'sync' : 'sparkles'}
+                name={aiAnalyzing ? 'close' : 'sparkles'}
                 size={22}
-                color="#8b5cf6"
+                color={aiAnalyzing ? '#d73a4a' : '#8b5cf6'}
               />
             </TouchableOpacity>
             <TouchableOpacity
