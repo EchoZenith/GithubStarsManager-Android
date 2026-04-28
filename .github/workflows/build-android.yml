@@ -27,6 +27,19 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Extract version from tag and update app.json
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          echo "APP_VERSION=$TAG_VERSION" >> $GITHUB_ENV
+          node -e "
+            const fs = require('fs');
+            const path = 'app.json';
+            let cfg = JSON.parse(fs.readFileSync(path, 'utf8'));
+            cfg.expo.version = '$TAG_VERSION';
+            fs.writeFileSync(path, JSON.stringify(cfg, null, 2) + '\n');
+            console.log('Version set to $TAG_VERSION');
+          "
+
       - name: Install dependencies
         run: npm ci
 
@@ -61,7 +74,7 @@ jobs:
           cd android
           ./gradlew bundleRelease
 
-      - name: Rename APKs with architecture suffix
+      - name: Rename APKs with version and architecture suffix
         run: |
           cd android/app/build/outputs/apk/release
           for apk in *.apk; do
@@ -71,26 +84,26 @@ jobs:
               *x86_64*)              suffix="x86_64" ;;
               *)                      suffix="universal" ;;
             esac
-            mv "$apk" "GithubStarsManager-${suffix}.apk"
+            mv "$apk" "GithubStarsManager-v${APP_VERSION}-${suffix}.apk"
           done
 
       - name: Rename AAB
         run: |
           cd android/app/build/outputs/bundle/release
-          mv *.aab GithubStarsManager-release.aab
+          mv *.aab "GithubStarsManager-v${APP_VERSION}.aab"
 
       - name: Upload per-architecture APKs
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apks
-          path: android/app/build/outputs/apk/release/GithubStarsManager-*.apk
+          path: android/app/build/outputs/apk/release/GithubStarsManager-v*.apk
           if-no-files-found: error
 
       - name: Upload release AAB
         uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
-          path: android/app/build/outputs/bundle/release/GithubStarsManager-release.aab
+          path: android/app/build/outputs/bundle/release/GithubStarsManager-v*.aab
           if-no-files-found: error
 
       - name: Create GitHub Release
@@ -98,6 +111,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            android/app/build/outputs/apk/release/GithubStarsManager-*.apk
-            android/app/build/outputs/bundle/release/GithubStarsManager-release.aab
+            android/app/build/outputs/apk/release/GithubStarsManager-v*.apk
+            android/app/build/outputs/bundle/release/GithubStarsManager-v*.aab
           generate_release_notes: true
