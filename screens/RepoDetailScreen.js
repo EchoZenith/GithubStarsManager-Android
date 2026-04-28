@@ -496,120 +496,122 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.infoCard}>
-        <View style={styles.infoRow}>
-          {repo.owner_avatar_url ? (
-            <Image
-              source={{ uri: repo.owner_avatar_url }}
-              style={styles.ownerAvatar}
-            />
-          ) : null}
-          <View style={styles.infoText}>
-            <Text style={styles.repoName}>{repo.full_name}</Text>
-            <Text style={styles.repoDesc} numberOfLines={3}>
-              {repo.description || '暂无描述'}
-            </Text>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            {repo.owner_avatar_url ? (
+              <Image
+                source={{ uri: repo.owner_avatar_url }}
+                style={styles.ownerAvatar}
+              />
+            ) : null}
+            <View style={styles.infoText}>
+              <Text style={styles.repoName}>{repo.full_name}</Text>
+              <Text style={styles.repoDesc} numberOfLines={3}>
+                {repo.description || '暂无描述'}
+              </Text>
+            </View>
           </View>
-        </View>
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{repo.stargazers_count}</Text>
-            <Text style={styles.statLabel}>Stars</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{repo.forks_count}</Text>
-            <Text style={styles.statLabel}>Forks</Text>
-          </View>
-          {repo.language ? (
+          <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{repo.language}</Text>
-              <Text style={styles.statLabel}>Language</Text>
+              <Text style={styles.statValue}>{repo.stargazers_count}</Text>
+              <Text style={styles.statLabel}>Stars</Text>
             </View>
-          ) : null}
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{repo.owner_login}</Text>
-            <Text style={styles.statLabel}>Owner</Text>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{repo.forks_count}</Text>
+              <Text style={styles.statLabel}>Forks</Text>
+            </View>
+            {repo.language ? (
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{repo.language}</Text>
+                <Text style={styles.statLabel}>Language</Text>
+              </View>
+            ) : null}
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{repo.owner_login}</Text>
+              <Text style={styles.statLabel}>Owner</Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      {aiSummary ? (
-        <View style={styles.aiCard}>
-          <View style={styles.aiCardHeader}>
+        {aiSummary ? (
+          <View style={styles.aiCard}>
+            <View style={styles.aiCardHeader}>
+              <Ionicons name="sparkles" size={16} color="#8b5cf6" />
+              <Text style={styles.aiCardTitle}>AI 分析</Text>
+            </View>
+            <Text style={styles.aiSummary}>{aiSummary}</Text>
+            {aiTags.length > 0 ? (
+              <View style={styles.aiTagsRow}>
+                {aiTags.map((tag, i) => (
+                  <View key={i} style={styles.aiTag}>
+                    <Text style={styles.aiTagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+            {aiPlatforms.length > 0 ? (
+              <View style={styles.aiPlatformsRow}>
+                <Ionicons name="logo-apple" size={13} color="#666" />
+                {aiPlatforms.map((p, i) => (
+                  <View key={i} style={styles.aiPlatform}>
+                    <Text style={styles.aiPlatformText}>{p}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
+        {!aiSummary && !aiLoading ? (
+          <TouchableOpacity style={styles.aiAnalyzeBtn} onPress={handleAiAnalyze}>
             <Ionicons name="sparkles" size={16} color="#8b5cf6" />
-            <Text style={styles.aiCardTitle}>AI 分析</Text>
+            <Text style={styles.aiAnalyzeText}>AI 分析此仓库</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {aiLoading ? (
+          <View style={styles.aiAnalyzeBtn}>
+            <ActivityIndicator size="small" color="#8b5cf6" />
+            <Text style={styles.aiAnalyzeText}>AI 分析中...</Text>
           </View>
-          <Text style={styles.aiSummary}>{aiSummary}</Text>
-          {aiTags.length > 0 ? (
-            <View style={styles.aiTagsRow}>
-              {aiTags.map((tag, i) => (
-                <View key={i} style={styles.aiTag}>
-                  <Text style={styles.aiTagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-          {aiPlatforms.length > 0 ? (
-            <View style={styles.aiPlatformsRow}>
-              <Ionicons name="logo-apple" size={13} color="#666" />
-              {aiPlatforms.map((p, i) => (
-                <View key={i} style={styles.aiPlatform}>
-                  <Text style={styles.aiPlatformText}>{p}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-        </View>
-      ) : null}
+        ) : null}
 
-      {!aiSummary && !aiLoading ? (
-        <TouchableOpacity style={styles.aiAnalyzeBtn} onPress={handleAiAnalyze}>
-          <Ionicons name="sparkles" size={16} color="#8b5cf6" />
-          <Text style={styles.aiAnalyzeText}>AI 分析此仓库</Text>
-        </TouchableOpacity>
-      ) : null}
+        {aiError ? (
+          <View style={styles.aiErrorCard}>
+            <Ionicons name="alert-circle-outline" size={14} color="#d73a4a" />
+            <Text style={styles.aiErrorText}>{aiError}</Text>
+          </View>
+        ) : null}
 
-      {aiLoading ? (
-        <View style={styles.aiAnalyzeBtn}>
-          <ActivityIndicator size="small" color="#8b5cf6" />
-          <Text style={styles.aiAnalyzeText}>AI 分析中...</Text>
+        <View style={styles.readmeHeader}>
+          <Ionicons name="book" size={16} color="#555" />
+          <Text style={styles.readmeTitle}>README.md</Text>
         </View>
-      ) : null}
 
-      {aiError ? (
-        <View style={styles.aiErrorCard}>
-          <Ionicons name="alert-circle-outline" size={14} color="#d73a4a" />
-          <Text style={styles.aiErrorText}>{aiError}</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.readmeHeader}>
-        <Ionicons name="book" size={16} color="#555" />
-        <Text style={styles.readmeTitle}>README.md</Text>
-      </View>
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0366d6" />
-          <Text style={styles.loadingText}>正在加载 README...</Text>
-        </View>
-      ) : error ? (
-        <View style={styles.loadingContainer}>
-          <Ionicons name="alert-circle-outline" size={36} color="#d73a4a" />
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : readme === null ? (
-        <View style={styles.loadingContainer}>
-          <Ionicons name="document-text-outline" size={36} color="#ccc" />
-          <Text style={styles.emptyText}>该仓库没有 README 文件</Text>
-        </View>
-      ) : (
-        <ScrollView style={styles.markdownScroll}>
-          <Markdown style={markdownStyles} rules={renderRules}>
-            {readme}
-          </Markdown>
-        </ScrollView>
-      )}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#0366d6" />
+            <Text style={styles.loadingText}>正在加载 README...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.loadingContainer}>
+            <Ionicons name="alert-circle-outline" size={36} color="#d73a4a" />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : readme === null ? (
+          <View style={styles.loadingContainer}>
+            <Ionicons name="document-text-outline" size={36} color="#ccc" />
+            <Text style={styles.emptyText}>该仓库没有 README 文件</Text>
+          </View>
+        ) : (
+          <View style={styles.markdownWrap}>
+            <Markdown style={markdownStyles} rules={renderRules}>
+              {readme}
+            </Markdown>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -642,6 +644,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1a1a1a',
     textAlign: 'center',
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   infoCard: {
     backgroundColor: '#fff',
@@ -713,10 +721,9 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   loadingContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 40,
   },
   loadingText: {
     marginTop: 10,
@@ -734,12 +741,12 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 14,
   },
-  markdownScroll: {
-    flex: 1,
+  markdownWrap: {
     backgroundColor: '#fff',
     marginHorizontal: 12,
     marginBottom: 12,
     borderRadius: 12,
+    padding: 16,
   },
   aiCard: {
     backgroundColor: '#f5f0ff',
