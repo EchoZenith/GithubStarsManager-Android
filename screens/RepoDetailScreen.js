@@ -9,7 +9,8 @@ import Markdown from 'react-native-markdown-display';
 import SyntaxHighlighter from 'react-native-syntax-highlighter';
 import { vs2015 } from 'react-syntax-highlighter/styles/hljs';
 import { fetchReadme, TokenExpiredError } from '../services/github';
-import { getGitHubToken } from '../services/database';
+import { getGitHubToken, getAiAnalysis, saveAiAnalysis } from '../services/database';
+import { analyzeRepository } from '../services/ai';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -405,6 +406,11 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
   const [readme, setReadme] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [aiSummary, setAiSummary] = useState(null);
+  const [aiTags, setAiTags] = useState([]);
+  const [aiPlatforms, setAiPlatforms] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
   const goBackRef = useRef(onGoBack);
   goBackRef.current = onGoBack;
 
@@ -437,6 +443,35 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 加载已有 AI 分析结果
+  useEffect(() => {
+    (async () => {
+      const cached = await getAiAnalysis(repo.repo_id);
+      if (cached) {
+        setAiSummary(cached.summary);
+        setAiTags(cached.tags);
+        setAiPlatforms(cached.platforms);
+      }
+    })();
+  }, [repo.repo_id]);
+
+  // 调用 AI 分析仓库
+  const handleAiAnalyze = async () => {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const result = await analyzeRepository(repo, readme);
+      setAiSummary(result.summary);
+      setAiTags(result.tags || []);
+      setAiPlatforms(result.platforms || []);
+      await saveAiAnalysis(repo.repo_id, result.summary, result.tags, result.platforms);
+    } catch (e) {
+      setAiError(e.message);
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -497,6 +532,56 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
           </View>
         </View>
       </View>
+
+      {aiSummary ? (
+        <View style={styles.aiCard}>
+          <View style={styles.aiCardHeader}>
+            <Ionicons name="sparkles" size={16} color="#8b5cf6" />
+            <Text style={styles.aiCardTitle}>AI 分析</Text>
+          </View>
+          <Text style={styles.aiSummary}>{aiSummary}</Text>
+          {aiTags.length > 0 ? (
+            <View style={styles.aiTagsRow}>
+              {aiTags.map((tag, i) => (
+                <View key={i} style={styles.aiTag}>
+                  <Text style={styles.aiTagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+          {aiPlatforms.length > 0 ? (
+            <View style={styles.aiPlatformsRow}>
+              <Ionicons name="logo-apple" size={13} color="#666" />
+              {aiPlatforms.map((p, i) => (
+                <View key={i} style={styles.aiPlatform}>
+                  <Text style={styles.aiPlatformText}>{p}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
+      {!aiSummary && !aiLoading ? (
+        <TouchableOpacity style={styles.aiAnalyzeBtn} onPress={handleAiAnalyze}>
+          <Ionicons name="sparkles" size={16} color="#8b5cf6" />
+          <Text style={styles.aiAnalyzeText}>AI 分析此仓库</Text>
+        </TouchableOpacity>
+      ) : null}
+
+      {aiLoading ? (
+        <View style={styles.aiAnalyzeBtn}>
+          <ActivityIndicator size="small" color="#8b5cf6" />
+          <Text style={styles.aiAnalyzeText}>AI 分析中...</Text>
+        </View>
+      ) : null}
+
+      {aiError ? (
+        <View style={styles.aiErrorCard}>
+          <Ionicons name="alert-circle-outline" size={14} color="#d73a4a" />
+          <Text style={styles.aiErrorText}>{aiError}</Text>
+        </View>
+      ) : null}
 
       <View style={styles.readmeHeader}>
         <Ionicons name="book" size={16} color="#555" />
@@ -655,5 +740,95 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
     marginBottom: 12,
     borderRadius: 12,
+  },
+  aiCard: {
+    backgroundColor: '#f5f0ff',
+    marginHorizontal: 12,
+    marginTop: 12,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#e8dfff',
+  },
+  aiCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  aiCardTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#8b5cf6',
+  },
+  aiSummary: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 20,
+  },
+  aiTagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+    gap: 6,
+  },
+  aiTag: {
+    backgroundColor: '#e8dfff',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  aiTagText: {
+    fontSize: 11,
+    color: '#8b5cf6',
+    fontWeight: '500',
+  },
+  aiPlatformsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginTop: 6,
+    gap: 4,
+  },
+  aiPlatform: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  aiPlatformText: {
+    fontSize: 11,
+    color: '#555',
+  },
+  aiAnalyzeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 12,
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e8dfff',
+    backgroundColor: '#faf8ff',
+    gap: 6,
+  },
+  aiAnalyzeText: {
+    fontSize: 14,
+    color: '#8b5cf6',
+    fontWeight: '500',
+  },
+  aiErrorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 12,
+    marginTop: 8,
+    gap: 6,
+  },
+  aiErrorText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#d73a4a',
+    lineHeight: 16,
   },
 });

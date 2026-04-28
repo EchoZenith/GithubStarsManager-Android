@@ -6,6 +6,8 @@ import HomeScreen from './screens/HomeScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import RepoDetailScreen from './screens/RepoDetailScreen';
 import CategoryManageScreen from './screens/CategoryManageScreen';
+import AiConfigScreen from './screens/AiConfigScreen';
+import StatsScreen from './screens/StatsScreen';
 
 export default function App() {
   // 当前显示的页面：loading / token_input / home / settings / repo_detail / category_manage
@@ -65,6 +67,8 @@ export default function App() {
       <SettingsScreen
         onGoBack={() => setScreen('home')}
         onTokenExpired={handleTokenExpired}
+        onOpenAiConfig={() => setScreen('ai_config')}
+        onOpenStats={() => setScreen('stats')}
       />
     );
   }
@@ -82,6 +86,22 @@ export default function App() {
     return (
       <CategoryManageScreen
         onGoBack={() => setScreen('home')}
+      />
+    );
+  }
+
+  if (screen === 'ai_config') {
+    return (
+      <AiConfigScreen
+        onGoBack={() => setScreen('settings')}
+      />
+    );
+  }
+
+  if (screen === 'stats') {
+    return (
+      <StatsScreen
+        onGoBack={() => setScreen('settings')}
       />
     );
   }

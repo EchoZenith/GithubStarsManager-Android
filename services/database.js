@@ -34,15 +34,28 @@ export async function initDatabase() {
         owner_avatar_url TEXT,
         owner_login TEXT,
         default_branch TEXT DEFAULT 'main',
+        ai_summary TEXT,
+        ai_tags TEXT,
+        ai_platforms TEXT,
+        ai_status TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       );`
     );
 
-    // 兼容旧数据库：给已有表添加 default_branch 列（如已存在则静默忽略）
-    try {
-      await db.execAsync('ALTER TABLE starred_repos ADD COLUMN default_branch TEXT DEFAULT \'main\'');
-    } catch (e) {
-      // Column already exists, ignore
+    // 兼容旧数据库：添加 default_branch 和 ai 相关列
+    const columns = [
+      "default_branch TEXT DEFAULT 'main'",
+      'ai_summary TEXT',
+      'ai_tags TEXT',
+      'ai_platforms TEXT',
+      'ai_status TEXT',
+    ];
+    for (const col of columns) {
+      try {
+        await db.execAsync(`ALTER TABLE starred_repos ADD COLUMN ${col}`);
+      } catch (e) {
+        // Column already exists, ignore
+      }
     }
 
     // 仓库-分类 多对多关联表
@@ -144,6 +157,105 @@ export async function setGitHubToken(token) {
 
 export async function clearGitHubToken() {
   await deleteSetting('github_token');
+}
+
+// === AI 配置（多 provider 支持） ===
+// 以 JSON 数组形式存储所有 provider，格式：
+// [{ id, name, apiKey, endpoint, model, active }]
+const AI_PROVIDERS_KEY = 'ai_providers';
+
+export async function getAiProviders() {
+  const raw = await getSetting(AI_PROVIDERS_KEY);
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+export async function saveAiProviders(providers) {
+  await setSetting(AI_PROVIDERS_KEY, JSON.stringify(providers));
+}
+
+// 获取当前激活的 provider（active = true），如果没有则返回第一个或 null
+export async function getActiveAiConfig() {
+  const providers = await getAiProviders();
+  const active = providers.find(p => p.active) || providers[0];
+  if (!active || !active.apiKey) return null;
+  return active;
+}
+
+// 迁移旧配置到新格式（兼容已有数据）
+export async function migrateOldAiConfig() {
+  const oldApiKey = await getSetting('ai_api_key');
+  if (!oldApiKey) return;
+  const oldEndpoint = await getSetting('ai_endpoint') || 'https://api.openai.com/v1';
+  const oldModel = await getSetting('ai_model') || 'deepseek-chat';
+  const providers = [
+    { id: Date.now().toString(), name: '默认', apiKey: oldApiKey, endpoint: oldEndpoint, model: oldModel, active: true },
+  ];
+  await saveAiProviders(providers);
+  await deleteSetting('ai_api_key');
+  await deleteSetting('ai_endpoint');
+  await deleteSetting('ai_model');
+}
+
+// 保存 AI 分析结果到仓库记录
+export async function saveAiAnalysis(repoId, summary, tags, platforms) {
+  await initDatabase();
+  await db.runAsync(
+    'UPDATE starred_repos SET ai_summary = ?, ai_tags = ?, ai_platforms = ?, ai_status = ? WHERE repo_id = ?',
+    safeStr(summary),
+    safeStr(JSON.stringify(tags || [])),
+    safeStr(JSON.stringify(platforms || [])),
+    summary ? 'done' : 'failed',
+    safeInt(repoId)
+  );
+}
+
+// 获取仓库的 AI 分析结果
+export async function getAiAnalysis(repoId) {
+  await initDatabase();
+  const row = await db.getFirstAsync(
+    'SELECT ai_summary, ai_tags, ai_platforms, ai_status FROM starred_repos WHERE repo_id = ?',
+    safeInt(repoId)
+  );
+  if (!row || !row.ai_summary) return null;
+  return {
+    summary: row.ai_summary,
+    tags: row.ai_tags ? JSON.parse(row.ai_tags) : [],
+    platforms: row.ai_platforms ? JSON.parse(row.ai_platforms) : [],
+    status: row.ai_status,
+  };
+}
+
+// 获取未分析的仓库列表
+export async function getUnanalyzedRepos() {
+  await initDatabase();
+  const rows = await db.getAllAsync(
+    `${REPO_SELECT}
+     FROM starred_repos r
+     LEFT JOIN repo_categories rc ON r.id = rc.repo_id
+     LEFT JOIN categories c ON rc.category_id = c.id
+     WHERE r.ai_summary IS NULL AND (r.ai_status IS NULL OR r.ai_status != 'failed')
+     ORDER BY r.created_at DESC`
+  );
+  return formatRepoRows(rows);
+}
+
+// 获取分析失败的仓库列表
+export async function getFailedAnalysisRepos() {
+  await initDatabase();
+  const rows = await db.getAllAsync(
+    `${REPO_SELECT}
+     FROM starred_repos r
+     LEFT JOIN repo_categories rc ON r.id = rc.repo_id
+     LEFT JOIN categories c ON rc.category_id = c.id
+     WHERE r.ai_status = 'failed'
+     ORDER BY r.created_at DESC`
+  );
+  return formatRepoRows(rows);
 }
 
 // === 分类 CRUD ===

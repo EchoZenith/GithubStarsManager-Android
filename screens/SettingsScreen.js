@@ -6,30 +6,31 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  getGitHubToken, clearGitHubToken, getAllCategories,
-  getTotalRepoCount, setGitHubToken
+  getGitHubToken, clearGitHubToken,
+  getTotalRepoCount,
+  getAiProviders,
 } from '../services/database';
 import { fetchStarredRepos, checkUpdate } from '../services/github';
 import TokenInput from '../components/TokenInput';
 
-// 设置页：Token 管理、数据统计、版本更新检查
-export default function SettingsScreen({ onGoBack, onTokenExpired }) {
+export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfig, onOpenStats }) {
   const [token, setToken] = useState(null);
-  const [stats, setStats] = useState({ repos: 0, categories: 0 });
+  const [repoCount, setRepoCount] = useState(0);
   const [showTokenInput, setShowTokenInput] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
+  const [aiProviders, setAiProviders] = useState([]);
   const goBackRef = useRef(onGoBack);
   goBackRef.current = onGoBack;
 
-  // 加载已保存的 Token 和数据统计
   const loadSettings = async () => {
     const savedToken = await getGitHubToken();
     setToken(savedToken);
-    const cats = await getAllCategories();
     const total = await getTotalRepoCount();
-    setStats({ repos: total, categories: cats.length });
+    setRepoCount(total);
+    const aList = await getAiProviders();
+    setAiProviders(aList);
   };
 
   useEffect(() => {
@@ -189,34 +190,32 @@ export default function SettingsScreen({ onGoBack, onTokenExpired }) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>数据统计</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Ionicons name="star" size={24} color="#f0ad4e" />
-              <Text style={styles.statNumber}>{stats.repos}</Text>
-              <Text style={styles.statLabel}>星标仓库</Text>
+          <TouchableOpacity style={styles.card} onPress={onOpenStats} activeOpacity={0.7}>
+            <View style={styles.aboutRow}>
+              <View style={styles.aboutLeft}>
+                <Ionicons name="stats-chart" size={20} color="#28a745" />
+                <Text style={styles.aboutLabel}>数据统计</Text>
+              </View>
+              <View style={styles.aboutRight}>
+                <Text style={styles.aboutValue}>{repoCount} 仓库</Text>
+                <Ionicons name="chevron-forward" size={18} color="#ccc" />
+              </View>
             </View>
-            <View style={styles.statCard}>
-              <Ionicons name="folder" size={24} color="#0366d6" />
-              <Text style={styles.statNumber}>{stats.categories}</Text>
-              <Text style={styles.statLabel}>分类</Text>
-            </View>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>AI 分析（即将推出）</Text>
-          <TouchableOpacity style={styles.card} activeOpacity={0.7}>
-            <View style={styles.aiPlaceholder}>
-              <View style={styles.aiIconWrap}>
-                <Ionicons name="sparkles" size={32} color="#8b5cf6" />
+          <TouchableOpacity style={styles.card} onPress={onOpenAiConfig} activeOpacity={0.7}>
+            <View style={styles.aboutRow}>
+              <View style={styles.aboutLeft}>
+                <Ionicons name="sparkles" size={20} color="#8b5cf6" />
+                <Text style={styles.aboutLabel}>AI 配置</Text>
               </View>
-              <Text style={styles.aiTitle}>智能分析你的星标仓库</Text>
-              <Text style={styles.aiDesc}>
-                自动分类、代码质量评估、技术趋势分析等强大功能即将上线
-              </Text>
-              <View style={styles.comingBadge}>
-                <Text style={styles.comingBadgeText}>即将推出</Text>
+              <View style={styles.aboutRight}>
+                {aiProviders.length > 0 ? (
+                  <Text style={styles.aboutValue}>{aiProviders.length} 个</Text>
+                ) : null}
+                <Ionicons name="chevron-forward" size={18} color="#ccc" />
               </View>
             </View>
           </TouchableOpacity>
@@ -353,70 +352,6 @@ const styles = StyleSheet.create({
   },
   tokenBtnTextOutline: {
     color: '#0366d6',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    alignItems: 'center',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  statNumber: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 13,
-    color: '#888',
-    marginTop: 4,
-  },
-  aiPlaceholder: {
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  aiIconWrap: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#f5f0ff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  aiTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 6,
-  },
-  aiDesc: {
-    fontSize: 13,
-    color: '#999',
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  comingBadge: {
-    backgroundColor: '#f5f0ff',
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  comingBadgeText: {
-    fontSize: 12,
-    color: '#8b5cf6',
-    fontWeight: '500',
   },
   aboutRow: {
     flexDirection: 'row',
