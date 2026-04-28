@@ -1,409 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  ActivityIndicator, Image, Linking, Platform, BackHandler, InteractionManager, Dimensions
+  ActivityIndicator, Image, Linking, Platform, BackHandler, InteractionManager
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import Markdown from 'react-native-markdown-display';
-import SyntaxHighlighter from 'react-native-syntax-highlighter';
-import { vs2015 } from 'react-syntax-highlighter/styles/hljs';
 import { fetchReadme, TokenExpiredError } from '../services/github';
 import { getGitHubToken, getAiAnalysis, saveAiAnalysis } from '../services/database';
 import { analyzeRepository } from '../services/ai';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-
-// 检测是否为 SVG 图片链接（React Native Image 组件不支持 SVG）
-function isSvgUrl(url) {
-  return /\.svg(\?|#|$)/i.test(url) || /\/svg(\?|#|$)/i.test(url);
-}
-
-// SVG 图片占位组件：点击后在系统浏览器中打开原始 SVG 文件
-function SvgImage({ uri, alt }) {
-  return (
-    <TouchableOpacity
-      style={svgStyles.container}
-      onPress={() => Linking.openURL(uri)}
-      activeOpacity={0.7}
-    >
-      <View style={svgStyles.placeholder}>
-        <Ionicons name="image-outline" size={28} color="#999" />
-        <Text style={svgStyles.placeholderText} numberOfLines={1}>
-          {alt || 'SVG 图片'}
-        </Text>
-        <View style={svgStyles.badge}>
-          <Ionicons name="open-outline" size={12} color="#fff" />
-          <Text style={svgStyles.badgeText}>浏览器查看</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-const svgStyles = StyleSheet.create({
-  container: {
-    width: '100%',
-    marginBottom: 12,
-    borderRadius: 8,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#e1e4e8',
-  },
-  placeholder: {
-    height: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f6f8fa',
-    gap: 4,
-  },
-  placeholderText: {
-    fontSize: 13,
-    color: '#666',
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0366d6',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    gap: 3,
-  },
-  badgeText: {
-    fontSize: 11,
-    color: '#fff',
-  },
-});
-
-// 根据图片设备像素自动计算合适的高度，避免固定宽高比导致 SVG 徽章变形
-function ReadmeImage({ src, alt }) {
-  const [dimensions, setDimensions] = useState(null);
-  const isSvg = isSvgUrl(src);
-
-  if (isSvg) {
-    return <SvgImage uri={src} alt={alt} />;
-  }
-
-  return (
-    <Image
-      source={{ uri: src }}
-      style={[
-        readmeImageStyles.image,
-        dimensions
-          ? { width: '100%', height: dimensions.height, aspectRatio: undefined }
-          : { width: '100%', height: 220 },
-      ]}
-      resizeMode="contain"
-      onLoad={(e) => {
-        const { width, height } = e.nativeEvent.source;
-        if (width && height) {
-          const maxWidth = SCREEN_WIDTH - 56;
-          const ratio = Math.min(maxWidth / width, 1);
-          setDimensions({ width: maxWidth, height: height * ratio });
-        }
-      }}
-    />
-  );
-}
-
-const readmeImageStyles = StyleSheet.create({
-  image: {
-    maxWidth: '100%',
-    borderRadius: 6,
-    marginBottom: 12,
-  },
-});
-
-function preprocessMarkdown(markdown, repoFullName, defaultBranch) {
-  if (!markdown) return markdown;
-
-  const [owner, repo] = repoFullName.split('/');
-  const branch = defaultBranch || 'main';
-  const rawBaseUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}`;
-  const githubBaseUrl = `https://github.com/${owner}/${repo}/blob/${branch}`;
-
-  let processed = markdown;
-
-  // Remove <picture> and <source> tags, keep their content
-  processed = processed.replace(/<picture[^>]*>/gi, '');
-  processed = processed.replace(/<\/picture>/gi, '');
-  processed = processed.replace(/<source[^>]*\/?>/gi, '');
-
-  // Convert <a><img>...</a> to markdown link-wrapped image first
-  processed = processed.replace(
-    /<a\s+[^>]*href=["']([^"']*)["'][^>]*>\s*(<img[^>]*>)\s*<\/a>/gi,
-    (match, href, imgTag) => {
-      const srcMatch = imgTag.match(/src\s*=\s*["']([^"']*)["']/i);
-      const altMatch = imgTag.match(/alt\s*=\s*["']([^"']*)["']/i);
-      const src = srcMatch ? srcMatch[1] : '';
-      const alt = altMatch ? altMatch[1] : 'image';
-      return `[![${alt}](${src})](${href})`;
-    }
-  );
-
-  // Convert remaining standalone HTML <img> tags to markdown image syntax
-  processed = processed.replace(
-    /<img\s+[^>]*src\s*=\s*["']([^"']*)["'][^>]*\/?>/gi,
-    (match, src) => {
-      const altMatch = match.match(/alt\s*=\s*["']([^"']*)["']/i);
-      const alt = altMatch ? altMatch[1] : 'image';
-      return `![${alt}](${src})`;
-    }
-  );
-
-  // Convert remaining HTML <a> tags to markdown link syntax
-  processed = processed.replace(
-    /<a\s+[^>]*href\s*=\s*["']([^"']*)["'][^>]*>([^<]*)<\/a>/gi,
-    (match, href, text) => `[${text.trim()}](${href})`
-  );
-
-  // Strip remaining HTML tags
-  processed = processed.replace(/<[^>]*>/g, '');
-
-  // Resolve relative URLs in markdown images (![alt](url)) and links ([text](url))
-  processed = processed.replace(
-    /(!)?\[([^\]]*)\]\(([^)]+)\)/g,
-    (match, isImage, text, url) => {
-      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:')) {
-        return match;
-      }
-      const baseUrl = isImage ? rawBaseUrl : githubBaseUrl;
-      const cleanUrl = url.replace(/^(\.\/|\/)/, '');
-      const resolvedUrl = `${baseUrl}/${cleanUrl}`;
-      return `${isImage || ''}[${text}](${resolvedUrl})`;
-    }
-  );
-
-  return processed;
-}
-
-function detectLanguage(content) {
-  const firstLine = content.split('\n')[0].trim();
-  const knownLanguages = {
-    js: 'javascript', jsx: 'javascript', mjs: 'javascript',
-    ts: 'typescript', tsx: 'typescript',
-    py: 'python', rb: 'ruby', rs: 'rust', go: 'go',
-    java: 'java', kt: 'kotlin', swift: 'swift',
-    c: 'c', cpp: 'cpp', cs: 'csharp',
-    html: 'xml', htm: 'xml', xml: 'xml',
-    css: 'css', scss: 'css', less: 'css',
-    sh: 'bash', bash: 'bash', zsh: 'bash', powershell: 'powershell',
-    json: 'json', yml: 'yaml', yaml: 'yaml',
-    sql: 'sql', php: 'php', r: 'r', dart: 'dart',
-    diff: 'diff', dockerfile: 'dockerfile', graphql: 'graphql',
-  };
-  const ext = firstLine.replace('```', '').toLowerCase();
-  return knownLanguages[ext] || ext || 'bash';
-}
-
-const markdownStyles = {
-  body: {
-    color: '#24292e',
-    fontSize: 15,
-    lineHeight: 24,
-    padding: 16,
-  },
-  heading1: {
-    fontSize: 22,
-    fontWeight: '700',
-    marginTop: 20,
-    marginBottom: 10,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e4e8',
-  },
-  heading2: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 18,
-    marginBottom: 8,
-    paddingBottom: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e4e8',
-  },
-  heading3: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 6,
-  },
-  heading4: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginTop: 14,
-    marginBottom: 4,
-  },
-  paragraph: {
-    marginBottom: 12,
-  },
-  list_item: {
-    marginBottom: 4,
-  },
-  bullet_list: {
-    paddingLeft: 24,
-    marginBottom: 12,
-  },
-  ordered_list: {
-    paddingLeft: 24,
-    marginBottom: 12,
-  },
-  code_inline: {
-    backgroundColor: 'rgba(27,31,35,0.05)',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 3,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 13,
-    color: '#d73a4a',
-  },
-  code_block: {
-    backgroundColor: '#f6f8fa',
-    padding: 12,
-    borderRadius: 6,
-    marginBottom: 12,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 13,
-  },
-  fence: {
-    backgroundColor: '#f6f8fa',
-    padding: 12,
-    borderRadius: 6,
-    marginBottom: 12,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    fontSize: 13,
-  },
-  blockquote: {
-    paddingLeft: 12,
-    color: '#6a737d',
-    borderLeftWidth: 4,
-    borderLeftColor: '#dfe2e5',
-    marginBottom: 12,
-  },
-  link: {
-    color: '#0366d6',
-    textDecorationLine: 'underline',
-  },
-  table: {
-    borderWidth: 1,
-    borderColor: '#dfe2e5',
-    borderRadius: 4,
-    marginBottom: 12,
-  },
-  thead: {
-    backgroundColor: '#f6f8fa',
-  },
-  th: {
-    padding: 6,
-    borderWidth: 1,
-    borderColor: '#dfe2e5',
-    fontWeight: '600',
-  },
-  td: {
-    padding: 6,
-    borderWidth: 1,
-    borderColor: '#dfe2e5',
-  },
-  hr: {
-    backgroundColor: '#e1e4e8',
-    height: 1,
-    marginVertical: 20,
-  },
-  image: {
-    maxWidth: '100%',
-    height: undefined,
-    borderRadius: 6,
-    marginBottom: 12,
-  },
-};
-
-// 重写 react-native-markdown-display 的默认渲染规则
-const renderRules = {
-  // 自定义图片渲染：支持 SVG 占位，普通图片自动计算尺寸
-  image: (node, children, parent, styles) => {
-    const { src, alt } = node.attributes;
-    return (
-      <ReadmeImage
-        key={node.key}
-        src={src}
-        alt={alt}
-      />
-    );
-  },
-  link: (node, children, parent, styles) => {
-    const { href } = node.attributes;
-    const childrenArr = Array.isArray(children) ? children : [children];
-    const hasOnlyText = childrenArr.every(
-      child => typeof child === 'string' || typeof child === 'number' || child === null
-    );
-    if (hasOnlyText) {
-      return (
-        <TouchableOpacity key={node.key} onPress={() => Linking.openURL(href)}>
-          <Text style={styles.link}>{children}</Text>
-        </TouchableOpacity>
-      );
-    }
-    return (
-      <TouchableOpacity key={node.key} onPress={() => Linking.openURL(href)}>
-        {children}
-      </TouchableOpacity>
-    );
-  },
-  fence: (node, children, parent, styles) => {
-    const lang = node.sourceInfo ? node.sourceInfo.split(/\s+/)[0] : '';
-    const code = node.content;
-    const language = detectLanguage(lang || code);
-    return (
-      <View key={node.key} style={codeBlockStyles.wrapper}>
-        {lang ? (
-          <View style={codeBlockStyles.langBar}>
-            <Text style={codeBlockStyles.langText}>{lang}</Text>
-          </View>
-        ) : null}
-        <SyntaxHighlighter
-          highlighter="highlightjs"
-          style={vs2015}
-          PreTag={ScrollView}
-          CodeTag={ScrollView}
-          fontFamily={Platform.OS === 'ios' ? 'Menlo' : 'monospace'}
-          fontSize={12}
-          customStyle={{
-            padding: 12,
-            margin: 0,
-            borderBottomLeftRadius: 8,
-            borderBottomRightRadius: 8,
-          }}
-        >
-          {code}
-        </SyntaxHighlighter>
-      </View>
-    );
-  },
-};
-
-const codeBlockStyles = StyleSheet.create({
-  wrapper: {
-    marginHorizontal: 12,
-    marginBottom: 12,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  langBar: {
-    backgroundColor: '#2d2d2d',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-  },
-  langText: {
-    color: '#999',
-    fontSize: 11,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-  },
-});
+import { renderReadme } from '../services/markdownRenderer';
 
 export default function RepoDetailScreen({ repo, onGoBack }) {
-  const [readme, setReadme] = useState(null);
+  const [readmeHtml, setReadmeHtml] = useState(null);
+  const [readmeRaw, setReadmeRaw] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [aiSummary, setAiSummary] = useState(null);
@@ -411,6 +21,8 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
   const [aiPlatforms, setAiPlatforms] = useState([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
+  const [webViewHeight, setWebViewHeight] = useState(1);
+  const webViewRef = useRef(null);
   const goBackRef = useRef(onGoBack);
   goBackRef.current = onGoBack;
 
@@ -433,8 +45,11 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
     try {
       const token = await getGitHubToken();
       const markdown = await fetchReadme(token, repo.full_name);
-      const cleaned = markdown ? preprocessMarkdown(markdown, repo.full_name, repo.default_branch) : null;
-      setReadme(cleaned);
+      setReadmeRaw(markdown);
+      if (markdown) {
+        const html = renderReadme(markdown, repo.full_name, repo.default_branch);
+        setReadmeHtml(html);
+      }
     } catch (e) {
       if (e instanceof TokenExpiredError) {
         setError('Token 已过期，请返回设置页面重新输入');
@@ -463,7 +78,7 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
     setAiLoading(true);
     setAiError(null);
     try {
-      const result = await analyzeRepository(repo, readme);
+      const result = await analyzeRepository(repo, readmeRaw);
       setAiSummary(result.summary);
       setAiTags(result.tags || []);
       setAiPlatforms(result.platforms || []);
@@ -480,6 +95,47 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
       Linking.openURL(repo.html_url);
     }
   };
+
+  const handleWebViewMessage = (event) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.type === 'link' && data.url) {
+        Linking.openURL(data.url);
+      } else if (data.type === 'height' && data.height > 0) {
+        setWebViewHeight(data.height);
+      }
+    } catch { }
+  };
+
+  const readmeContent = loading ? (
+    <View style={styles.readmePlaceholder}>
+      <ActivityIndicator size="large" color="#0366d6" />
+      <Text style={styles.loadingText}>正在加载 README...</Text>
+    </View>
+  ) : error ? (
+    <View style={styles.readmePlaceholder}>
+      <Ionicons name="alert-circle-outline" size={36} color="#d73a4a" />
+      <Text style={styles.errorText}>{error}</Text>
+    </View>
+  ) : readmeHtml === null ? (
+    <View style={styles.readmePlaceholder}>
+      <Ionicons name="document-text-outline" size={36} color="#ccc" />
+      <Text style={styles.emptyText}>该仓库没有 README 文件</Text>
+    </View>
+  ) : (
+    <View style={styles.webViewWrap}>
+      <WebView
+        ref={webViewRef}
+        source={{ html: readmeHtml }}
+        originWhitelist={['*']}
+        javaScriptEnabled={true}
+        onMessage={handleWebViewMessage}
+        style={{ height: webViewHeight, width: '100%' }}
+        scrollEnabled={false}
+        onError={() => { }}
+      />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -589,28 +245,7 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
           <Text style={styles.readmeTitle}>README.md</Text>
         </View>
 
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#0366d6" />
-            <Text style={styles.loadingText}>正在加载 README...</Text>
-          </View>
-        ) : error ? (
-          <View style={styles.loadingContainer}>
-            <Ionicons name="alert-circle-outline" size={36} color="#d73a4a" />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : readme === null ? (
-          <View style={styles.loadingContainer}>
-            <Ionicons name="document-text-outline" size={36} color="#ccc" />
-            <Text style={styles.emptyText}>该仓库没有 README 文件</Text>
-          </View>
-        ) : (
-          <View style={styles.markdownWrap}>
-            <Markdown style={markdownStyles} rules={renderRules}>
-              {readme}
-            </Markdown>
-          </View>
-        )}
+        {readmeContent}
       </ScrollView>
     </View>
   );
@@ -720,10 +355,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#555',
   },
-  loadingContainer: {
+  readmePlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
     padding: 40,
+    marginHorizontal: 12,
+    marginBottom: 12,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    minHeight: 200,
   },
   loadingText: {
     marginTop: 10,
@@ -741,12 +381,12 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 14,
   },
-  markdownWrap: {
-    backgroundColor: '#fff',
+  webViewWrap: {
     marginHorizontal: 12,
     marginBottom: 12,
     borderRadius: 12,
-    padding: 16,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
   },
   aiCard: {
     backgroundColor: '#f5f0ff',
