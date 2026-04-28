@@ -7,12 +7,15 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import RepoItem from '../components/RepoItem';
-import { fetchStarredRepos, TokenExpiredError } from '../services/github';
+import { fetchStarredRepos, TokenExpiredError, fetchReadme } from '../services/github';
 import {
   initDatabase, getAllCategories, saveRepos, getAllRepos, getReposByCategory,
-  getUncategorizedRepos, getGitHubToken, batchSetRepoCategories
+  getUncategorizedRepos, getGitHubToken, batchSetRepoCategories,
+  getUnanalyzedRepos, getFailedAnalysisRepos, saveAiAnalysis,
+  getActiveAiConfig, migrateOldAiConfig,
 } from '../services/database';
 import { runAutoCategorize } from '../services/categorizer';
+import { analyzeRepository } from '../services/ai';
 
 // 首页：仓库列表、分类标签栏、同步入口
 export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoDetail, onOpenCategoryManage }) {
@@ -24,6 +27,8 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncInfo, setSyncInfo] = useState('');
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [aiProgress, setAiProgress] = useState({ current: 0, total: 0, label: '' });
 
   // 按分类加载仓库列表
   const loadRepos = useCallback(async (catId) => {
@@ -121,6 +126,68 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
     ]);
   };
 
+  // AI 批量分析
+  const handleAiAnalyze = () => {
+    Alert.alert('AI 批量分析', '选择要分析的范围', [
+      { text: '取消', style: 'cancel' },
+      { text: '分析全部', onPress: () => runAiBatch('all') },
+      { text: '分析未分析的', onPress: () => runAiBatch('unanalyzed') },
+      { text: '重新分析失败的', onPress: () => runAiBatch('failed') },
+    ]);
+  };
+
+  const runAiBatch = async (mode) => {
+    const config = await getActiveAiConfig();
+    if (!config) {
+      Alert.alert('提示', '请先在设置中配置 AI');
+      return;
+    }
+
+    let targetRepos;
+    if (mode === 'all') {
+      targetRepos = await getAllRepos();
+    } else if (mode === 'unanalyzed') {
+      targetRepos = await getUnanalyzedRepos();
+    } else {
+      targetRepos = await getFailedAnalysisRepos();
+    }
+
+    if (targetRepos.length === 0) {
+      Alert.alert('提示', '没有需要分析的仓库');
+      return;
+    }
+
+    setAiAnalyzing(true);
+    setAiProgress({ current: 0, total: targetRepos.length, label: '准备中...' });
+
+    let success = 0;
+    let fail = 0;
+    for (let i = 0; i < targetRepos.length; i++) {
+      const repo = targetRepos[i];
+      setAiProgress({ current: i + 1, total: targetRepos.length, label: repo.full_name });
+      try {
+        const token = await getGitHubToken();
+        let readmeContent = null;
+        try {
+          readmeContent = await fetchReadme(token, repo.full_name);
+        } catch {
+          // README 不存在也继续分析
+        }
+        const result = await analyzeRepository(repo, readmeContent);
+        await saveAiAnalysis(repo.repo_id, result.summary, result.tags, result.platforms);
+        success++;
+      } catch {
+        await saveAiAnalysis(repo.repo_id, null, [], []);
+        fail++;
+      }
+    }
+
+    setAiAnalyzing(false);
+    setAiProgress({ current: 0, total: 0, label: '' });
+    await loadRepos(selectedCategory);
+    Alert.alert('分析完成', `成功 ${success} 个${fail > 0 ? `，失败 ${fail} 个` : ''}`);
+  };
+
   const currentCategoryName = selectedCategory === null
     ? '全部仓库'
     : selectedCategory === 0
@@ -162,6 +229,17 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
               <Ionicons name="folder-open" size={22} color="#0366d6" />
             </TouchableOpacity>
             <TouchableOpacity
+              style={[styles.headerBtn, { backgroundColor: '#f5f0ff' }]}
+              onPress={handleAiAnalyze}
+              disabled={aiAnalyzing}
+            >
+              <Ionicons
+                name={aiAnalyzing ? 'sync' : 'sparkles'}
+                size={22}
+                color="#8b5cf6"
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
               style={styles.headerBtn}
               onPress={onOpenSettings}
             >
@@ -173,6 +251,16 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
           <Text style={styles.syncInfo}>{syncInfo}</Text>
         ) : null}
       </View>
+
+      {aiAnalyzing ? (
+        <View style={styles.aiProgressBar}>
+          <ActivityIndicator size="small" color="#8b5cf6" />
+          <Text style={styles.aiProgressText}>
+            AI 分析中 {aiProgress.current}/{aiProgress.total}
+          </Text>
+          <Text style={styles.aiProgressLabel} numberOfLines={1}>{aiProgress.label}</Text>
+        </View>
+      ) : null}
 
       <View style={styles.categoryTabs}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -382,6 +470,26 @@ const styles = StyleSheet.create({
   syncingText: {
     color: '#fff',
     fontSize: 13,
+  },
+  aiProgressBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f5f0ff',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  aiProgressText: {
+    color: '#8b5cf6',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  aiProgressLabel: {
+    color: '#8b5cf6',
+    fontSize: 11,
+    flex: 1,
+    textAlign: 'right',
   },
   listContent: {
     paddingBottom: 20,
