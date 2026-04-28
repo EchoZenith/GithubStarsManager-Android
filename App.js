@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { initDatabase, getGitHubToken } from './services/database';
 import TokenInput from './components/TokenInput';
+import ScreenTransition from './components/ScreenTransition';
 import HomeScreen from './screens/HomeScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import RepoDetailScreen from './screens/RepoDetailScreen';
@@ -59,60 +60,76 @@ export default function App() {
   }
 
   if (screen === 'token_input') {
-    return <TokenInput onTokenSaved={handleTokenSaved} />;
+    return (
+      <ScreenTransition id="token_input">
+        <TokenInput onTokenSaved={handleTokenSaved} />
+      </ScreenTransition>
+    );
   }
 
   if (screen === 'settings') {
     return (
-      <SettingsScreen
-        onGoBack={() => setScreen('home')}
-        onTokenExpired={handleTokenExpired}
-        onOpenAiConfig={() => setScreen('ai_config')}
-        onOpenStats={() => setScreen('stats')}
-      />
+      <ScreenTransition id="settings">
+        <SettingsScreen
+          onGoBack={() => setScreen('home')}
+          onTokenExpired={handleTokenExpired}
+          onOpenAiConfig={() => setScreen('ai_config')}
+          onOpenStats={() => setScreen('stats')}
+        />
+      </ScreenTransition>
     );
   }
 
   if (screen === 'repo_detail' && selectedRepo) {
     return (
-      <RepoDetailScreen
-        repo={selectedRepo}
-        onGoBack={handleCloseRepoDetail}
-      />
+      <ScreenTransition id="repo_detail">
+        <RepoDetailScreen
+          repo={selectedRepo}
+          onGoBack={handleCloseRepoDetail}
+        />
+      </ScreenTransition>
     );
   }
 
   if (screen === 'category_manage') {
     return (
-      <CategoryManageScreen
-        onGoBack={() => setScreen('home')}
-      />
+      <ScreenTransition id="category_manage">
+        <CategoryManageScreen
+          onGoBack={() => setScreen('home')}
+        />
+      </ScreenTransition>
     );
   }
 
   if (screen === 'ai_config') {
     return (
-      <AiConfigScreen
-        onGoBack={() => setScreen('settings')}
-      />
+      <ScreenTransition id="ai_config">
+        <AiConfigScreen
+          onGoBack={() => setScreen('settings')}
+        />
+      </ScreenTransition>
     );
   }
 
   if (screen === 'stats') {
     return (
-      <StatsScreen
-        onGoBack={() => setScreen('settings')}
-      />
+      <ScreenTransition id="stats">
+        <StatsScreen
+          onGoBack={() => setScreen('settings')}
+        />
+      </ScreenTransition>
     );
   }
 
   return (
-    <HomeScreen
-      onTokenExpired={handleTokenExpired}
-      onOpenSettings={() => setScreen('settings')}
-      onOpenRepoDetail={handleOpenRepoDetail}
-      onOpenCategoryManage={() => setScreen('category_manage')}
-    />
+    <ScreenTransition id="home">
+      <HomeScreen
+        onTokenExpired={handleTokenExpired}
+        onOpenSettings={() => setScreen('settings')}
+        onOpenRepoDetail={handleOpenRepoDetail}
+        onOpenCategoryManage={() => setScreen('category_manage')}
+      />
+    </ScreenTransition>
   );
 }
 

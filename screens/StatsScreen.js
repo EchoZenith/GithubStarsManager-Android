@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Platform, BackHandler
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -49,46 +49,48 @@ export default function StatsScreen({ onGoBack }) {
         <View style={styles.backBtn} />
       </View>
 
-      <View style={styles.overviewRow}>
-        <View style={styles.overviewCard}>
-          <Ionicons name="star" size={32} color="#f0ad4e" />
-          <Text style={styles.overviewNumber}>{stats.repos}</Text>
-          <Text style={styles.overviewLabel}>星标仓库</Text>
-        </View>
-        <View style={styles.overviewCard}>
-          <Ionicons name="folder" size={32} color="#0366d6" />
-          <Text style={styles.overviewNumber}>{stats.categories}</Text>
-          <Text style={styles.overviewLabel}>分类</Text>
-        </View>
-      </View>
-
-      <View style={styles.sectionHeader}>
-        <Ionicons name="bar-chart" size={16} color="#555" />
-        <Text style={styles.sectionHeaderText}>各分类仓库数量</Text>
-      </View>
-
-      {categoryStats.map((cat) => (
-        <View key={cat.id} style={styles.catRow}>
-          <View style={styles.catLeft}>
-            <View style={[styles.catDot, { backgroundColor: cat.color }]} />
-            <Text style={styles.catName}>{cat.name}</Text>
+      <ScrollView style={styles.scroll}>
+        <View style={styles.overviewRow}>
+          <View style={styles.overviewCard}>
+            <Ionicons name="star" size={32} color="#f0ad4e" />
+            <Text style={styles.overviewNumber}>{stats.repos}</Text>
+            <Text style={styles.overviewLabel}>星标仓库</Text>
           </View>
-          <View style={styles.catBarWrap}>
-            <View
-              style={[
-                styles.catBar,
-                {
-                  width: stats.repos > 0 ? `${(cat.repo_count / stats.repos) * 100}%` : '0%',
-                  backgroundColor: cat.color,
-                },
-              ]}
-            />
+          <View style={styles.overviewCard}>
+            <Ionicons name="folder" size={32} color="#0366d6" />
+            <Text style={styles.overviewNumber}>{stats.categories}</Text>
+            <Text style={styles.overviewLabel}>分类</Text>
           </View>
-          <Text style={styles.catCount}>{cat.repo_count}</Text>
         </View>
-      ))}
 
-      <View style={{ height: 40 }} />
+        <View style={styles.sectionHeader}>
+          <Ionicons name="bar-chart" size={16} color="#555" />
+          <Text style={styles.sectionHeaderText}>各分类仓库数量</Text>
+        </View>
+
+        {categoryStats.map((cat) => (
+          <View key={cat.id} style={styles.catRow}>
+            <View style={styles.catLeft}>
+              <View style={[styles.catDot, { backgroundColor: cat.color }]} />
+              <Text style={styles.catName}>{cat.name}</Text>
+            </View>
+            <View style={styles.catBarWrap}>
+              <View
+                style={[
+                  styles.catBar,
+                  {
+                    width: stats.repos > 0 ? `${(cat.repo_count / stats.repos) * 100}%` : '0%',
+                    backgroundColor: cat.color,
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.catCount}>{cat.repo_count}</Text>
+          </View>
+        ))}
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </View>
   );
 }
@@ -119,6 +121,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1a1a1a',
+  },
+  scroll: {
+    flex: 1,
   },
   overviewRow: {
     flexDirection: 'row',
