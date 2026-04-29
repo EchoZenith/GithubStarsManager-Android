@@ -75,6 +75,7 @@ export default function App() {
           onTokenExpired={handleTokenExpired}
           onOpenAiConfig={() => setScreen('ai_config')}
           onOpenStats={() => setScreen('stats')}
+          onOpenCategoryManage={() => setScreen('category_manage')}
         />
       </ScreenTransition>
     );
@@ -127,7 +128,6 @@ export default function App() {
         onTokenExpired={handleTokenExpired}
         onOpenSettings={() => setScreen('settings')}
         onOpenRepoDetail={handleOpenRepoDetail}
-        onOpenCategoryManage={() => setScreen('category_manage')}
       />
     </ScreenTransition>
   );

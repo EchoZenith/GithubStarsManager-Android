@@ -18,7 +18,7 @@ import { runAutoCategorize } from '../services/categorizer';
 import { analyzeRepository } from '../services/ai';
 
 // 首页：仓库列表、分类标签栏、同步入口
-export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoDetail, onOpenCategoryManage }) {
+export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoDetail }) {
   const [categories, setCategories] = useState([]);
   // selectedCategory: null=全部, 0=未分类, >0=具体分类 ID
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -119,11 +119,11 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
     }
   };
 
-  // 长按仓库时提示去分类管理页操作
+  // 长按仓库时提示去设置页面管理分类
   const handleRepoLongPress = () => {
-    Alert.alert('管理分类', '请前往分类管理页面设置仓库分类', [
+    Alert.alert('管理分类', '请前往设置页面管理仓库分类', [
       { text: '取消', style: 'cancel' },
-      { text: '前往', onPress: onOpenCategoryManage },
+      { text: '前往', onPress: onOpenSettings },
     ]);
   };
 
@@ -232,12 +232,6 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
                 size={22}
                 color="#0366d6"
               />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.headerBtn}
-              onPress={onOpenCategoryManage}
-            >
-              <Ionicons name="folder-open" size={22} color="#0366d6" />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.headerBtn, { backgroundColor: aiAnalyzing ? '#fde8e8' : '#f5f0ff' }]}
