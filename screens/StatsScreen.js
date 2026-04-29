@@ -10,8 +10,10 @@ import {
   getRepoCountByCategory,
 } from '../services/database';
 import { colors } from '../constants/theme';
+import { useTranslation } from '../i18n';
 
 export default function StatsScreen({ onGoBack }) {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({ repos: 0, categories: 0 });
   const [categoryStats, setCategoryStats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +48,7 @@ export default function StatsScreen({ onGoBack }) {
         <TouchableOpacity style={styles.backBtn} onPress={onGoBack}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>数据统计</Text>
+        <Text style={styles.headerTitle}>{t('stats.title')}</Text>
         <View style={styles.backBtn} />
       </View>
 
@@ -55,18 +57,18 @@ export default function StatsScreen({ onGoBack }) {
           <View style={styles.overviewCard}>
             <Ionicons name="star" size={32} color="#f0ad4e" />
             <Text style={styles.overviewNumber}>{stats.repos}</Text>
-            <Text style={styles.overviewLabel}>星标仓库</Text>
+            <Text style={styles.overviewLabel}>{t('stats.totalRepos')}</Text>
           </View>
           <View style={styles.overviewCard}>
             <Ionicons name="folder" size={32} color="#0366d6" />
             <Text style={styles.overviewNumber}>{stats.categories}</Text>
-            <Text style={styles.overviewLabel}>分类</Text>
+            <Text style={styles.overviewLabel}>{t('stats.categoriesLabel')}</Text>
           </View>
         </View>
 
         <View style={styles.sectionHeader}>
           <Ionicons name="bar-chart" size={16} color="#555" />
-          <Text style={styles.sectionHeaderText}>各分类仓库数量</Text>
+          <Text style={styles.sectionHeaderText}>{t('stats.categoryDist')}</Text>
         </View>
 
         {categoryStats.map((cat) => (

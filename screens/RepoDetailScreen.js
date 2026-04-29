@@ -11,8 +11,10 @@ import { getGitHubToken, getAiAnalysis, saveAiAnalysis } from '../services/datab
 import { analyzeRepository } from '../services/ai';
 import { renderReadme } from '../services/markdownRenderer';
 import { colors, spacing, borderRadius, shadows } from '../constants/theme';
+import { useTranslation } from '../i18n';
 
 export default function RepoDetailScreen({ repo, onGoBack }) {
+  const { t } = useTranslation();
   const [readmeHtml, setReadmeHtml] = useState(null);
   const [readmeRaw, setReadmeRaw] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +55,7 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
             const html = renderReadme(markdown, repo.full_name, repo.default_branch);
             setReadmeHtml(html);
           } catch {
-            setError('README 渲染失败');
+            setError(t('repoDetail.renderFailed'));
           }
           setLoading(false);
         }, 50);
@@ -62,9 +64,9 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
       }
     } catch (e) {
       if (e instanceof TokenExpiredError) {
-        setError('Token 已过期，请返回设置页面重新输入');
+        setError(t('repoDetail.tokenExpired'));
       } else {
-        setError(e.message || '加载 README 失败');
+        setError(e.message || t('repoDetail.loadFailed'));
       }
       setLoading(false);
     }
@@ -119,17 +121,17 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
   const readmeContent = loading ? (
     <View style={styles.readmePlaceholder}>
       <ActivityIndicator size="large" color="#0366d6" />
-      <Text style={styles.loadingText}>正在加载 README...</Text>
+      <Text style={styles.loadingText}>{t('repoDetail.loading')}</Text>
     </View>
   ) : error ? (
     <View style={styles.readmePlaceholder}>
-      <Ionicons name="alert-circle-outline" size={36} color="#d73a4a" />
+      <Ionicons name="alert-circle-outline" size={36} color={colors.accentRed} />
       <Text style={styles.errorText}>{error}</Text>
     </View>
   ) : readmeHtml === null ? (
     <View style={styles.readmePlaceholder}>
-      <Ionicons name="document-text-outline" size={36} color="#ccc" />
-      <Text style={styles.emptyText}>该仓库没有 README 文件</Text>
+      <Ionicons name="document-text-outline" size={36} color={colors.textMuted} />
+      <Text style={styles.emptyText}>{t('repoDetail.noReadme')}</Text>
     </View>
   ) : (
     <View style={styles.webViewWrap}>
@@ -173,28 +175,28 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
             <View style={styles.infoText}>
               <Text style={styles.repoName}>{repo.full_name}</Text>
               <Text style={styles.repoDesc} numberOfLines={3}>
-                {repo.description || '暂无描述'}
+                {repo.description || t('repoDetail.noDesc')}
               </Text>
             </View>
           </View>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{repo.stargazers_count}</Text>
-              <Text style={styles.statLabel}>Stars</Text>
+              <Text style={styles.statLabel}>{t('repoDetail.stars')}</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{repo.forks_count}</Text>
-              <Text style={styles.statLabel}>Forks</Text>
+              <Text style={styles.statLabel}>{t('repoDetail.forks')}</Text>
             </View>
             {repo.language ? (
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{repo.language}</Text>
-                <Text style={styles.statLabel}>Language</Text>
+                <Text style={styles.statLabel}>{t('repoDetail.language')}</Text>
               </View>
             ) : null}
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{repo.owner_login}</Text>
-              <Text style={styles.statLabel}>Owner</Text>
+              <Text style={styles.statLabel}>{t('repoDetail.owner')}</Text>
             </View>
           </View>
         </View>
@@ -203,7 +205,7 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
           <View style={styles.aiCard}>
             <View style={styles.aiCardHeader}>
               <Ionicons name="sparkles" size={16} color="#8b5cf6" />
-              <Text style={styles.aiCardTitle}>AI 分析</Text>
+              <Text style={styles.aiCardTitle}>{t('repoDetail.aiCardTitle')}</Text>
             </View>
             <Text style={styles.aiSummary}>{aiSummary}</Text>
             {aiTags.length > 0 ? (
@@ -231,14 +233,14 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
         {!aiSummary && !aiLoading ? (
           <TouchableOpacity style={styles.aiAnalyzeBtn} onPress={handleAiAnalyze}>
             <Ionicons name="sparkles" size={16} color="#8b5cf6" />
-            <Text style={styles.aiAnalyzeText}>AI 分析此仓库</Text>
+            <Text style={styles.aiAnalyzeText}>{t('repoDetail.aiAnalyze')}</Text>
           </TouchableOpacity>
         ) : null}
 
         {aiLoading ? (
           <View style={styles.aiAnalyzeBtn}>
             <ActivityIndicator size="small" color="#8b5cf6" />
-            <Text style={styles.aiAnalyzeText}>AI 分析中...</Text>
+            <Text style={styles.aiAnalyzeText}>{t('repoDetail.aiAnalyzing')}</Text>
           </View>
         ) : null}
 
@@ -251,7 +253,7 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
 
         <View style={styles.readmeHeader}>
           <Ionicons name="book" size={16} color="#555" />
-          <Text style={styles.readmeTitle}>README.md</Text>
+          <Text style={styles.readmeTitle}>{t('repoDetail.readme')}</Text>
         </View>
 
         {readmeContent}

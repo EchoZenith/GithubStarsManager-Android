@@ -8,15 +8,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAiProviders, saveAiProviders, migrateOldAiConfig } from '../services/database';
 import { verifyAiConfig } from '../services/ai';
 import { colors } from '../constants/theme';
+import { useTranslation } from '../i18n';
 
 const DEFAULT_ENDPOINTS = [
   { name: 'DeepSeek', endpoint: 'https://api.deepseek.com', model: 'deepseek-v4-flash' },
   { name: 'OpenAI', endpoint: 'https://api.openai.com/v1', model: 'gpt-3.5-turbo' },
   { name: '硅基流动', endpoint: 'https://api.siliconflow.cn/v1', model: 'deepseek-ai/DeepSeek-V3' },
-  { name: '自定义', endpoint: '', model: '' },
+  { name: '__custom__', endpoint: '', model: '' },
 ];
 
 export default function AiConfigScreen({ onGoBack }) {
+  const { t } = useTranslation();
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -75,7 +77,7 @@ export default function AiConfigScreen({ onGoBack }) {
   };
 
   const applyPreset = (preset) => {
-    setFormName(preset.name);
+    setFormName(preset.name === '__custom__' ? t('aiConfig.presetCustom') : preset.name);
     setFormEndpoint(preset.endpoint);
     setFormModel(preset.model);
     setShowPreset(false);
@@ -83,15 +85,15 @@ export default function AiConfigScreen({ onGoBack }) {
 
   const handleSave = async () => {
     if (!formName.trim()) {
-      Alert.alert('提示', '请输入名称');
+      Alert.alert(t('common.confirm'), t('aiConfig.nameRequired'));
       return;
     }
     if (!formKey.trim()) {
-      Alert.alert('提示', '请输入 API Key');
+      Alert.alert(t('common.confirm'), t('aiConfig.apiKeyRequired'));
       return;
     }
     if (!formEndpoint.trim()) {
-      Alert.alert('提示', '请输入 API Endpoint');
+      Alert.alert(t('common.confirm'), t('aiConfig.endpointRequired'));
       return;
     }
 
@@ -120,10 +122,10 @@ export default function AiConfigScreen({ onGoBack }) {
 
   const handleDelete = (id) => {
     const target = providers.find(p => p.id === id);
-    Alert.alert('删除', `确定要删除「${target.name}」吗？`, [
-      { text: '取消', style: 'cancel' },
+    Alert.alert(t('aiConfig.deleteTitle'), t('aiConfig.deleteConfirm', { name: target.name }), [
+      { text: t('app.cancel'), style: 'cancel' },
       {
-        text: '删除',
+        text: t('app.delete'),
         style: 'destructive',
         onPress: async () => {
           const remaining = providers.filter(p => p.id !== id);
@@ -146,7 +148,7 @@ export default function AiConfigScreen({ onGoBack }) {
 
   const handleVerify = async () => {
     if (!editingId) {
-      Alert.alert('提示', '请先保存当前配置');
+      Alert.alert(t('common.confirm'), t('aiConfig.saveFirst'));
       return;
     }
     const p = providers.find(pr => pr.id === editingId);
@@ -154,9 +156,9 @@ export default function AiConfigScreen({ onGoBack }) {
     setVerifying(true);
     try {
       await verifyAiConfig(p.apiKey, p.endpoint, p.model);
-      Alert.alert('验证成功', '连接有效');
+      Alert.alert(t('aiConfig.verifyTitle'), t('aiConfig.verifySuccess'));
     } catch (e) {
-      Alert.alert('验证失败', e.message);
+      Alert.alert(t('aiConfig.verifyFailTitle'), e.message);
     } finally {
       setVerifying(false);
     }
@@ -177,7 +179,7 @@ export default function AiConfigScreen({ onGoBack }) {
         <TouchableOpacity style={styles.headerBtn} onPress={onGoBack}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>AI 配置</Text>
+        <Text style={styles.headerTitle}>{t('aiConfig.title')}</Text>
         <TouchableOpacity style={styles.headerBtn} onPress={openNewForm}>
           <Ionicons name="add" size={26} color="#8b5cf6" />
         </TouchableOpacity>
@@ -193,7 +195,7 @@ export default function AiConfigScreen({ onGoBack }) {
                 style={styles.presetBtn}
                 onPress={() => applyPreset(preset)}
               >
-                <Text style={styles.presetBtnText}>{preset.name}</Text>
+                <Text style={styles.presetBtnText}>{preset.name === '__custom__' ? t('aiConfig.presetCustom') : preset.name}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -201,42 +203,42 @@ export default function AiConfigScreen({ onGoBack }) {
 
         {(editingId !== null || formName || formKey || showPreset) ? (
           <View style={styles.formCard}>
-            <Text style={styles.formTitle}>{editingId ? '编辑' : '新增'} Provider</Text>
-            <Text style={styles.fieldLabel}>名称</Text>
+            <Text style={styles.formTitle}>{editingId ? t('aiConfig.editProvider') : t('aiConfig.newProvider')}</Text>
+            <Text style={styles.fieldLabel}>{t('aiConfig.nameLabel')}</Text>
             <TextInput
               style={styles.input}
               value={formName}
               onChangeText={setFormName}
-              placeholder="例如 DeepSeek、OpenAI"
+              placeholder={t('aiConfig.namePlaceholder')}
               placeholderTextColor="#bbb"
             />
-            <Text style={styles.fieldLabel}>API Endpoint</Text>
+            <Text style={styles.fieldLabel}>{t('aiConfig.apiEndpoint')}</Text>
             <TextInput
               style={styles.input}
               value={formEndpoint}
               onChangeText={setFormEndpoint}
-              placeholder="https://api.deepseek.com"
+              placeholder={t('aiConfig.endpointPlaceholder')}
               placeholderTextColor="#bbb"
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <Text style={styles.fieldLabel}>模型名称</Text>
+            <Text style={styles.fieldLabel}>{t('aiConfig.modelLabel')}</Text>
             <TextInput
               style={styles.input}
               value={formModel}
               onChangeText={setFormModel}
-              placeholder="deepseek-chat"
+              placeholder={t('aiConfig.modelPlaceholder')}
               placeholderTextColor="#bbb"
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <Text style={styles.fieldLabel}>API Key</Text>
+            <Text style={styles.fieldLabel}>{t('aiConfig.apiKey')}</Text>
             <View style={styles.keyRow}>
               <TextInput
                 style={styles.keyInput}
                 value={formKey}
                 onChangeText={setFormKey}
-                placeholder="sk-xxxxxxxxxxxxxxxx"
+                placeholder={t('aiConfig.keyPlaceholder')}
                 placeholderTextColor="#bbb"
                 secureTextEntry={!keyVisible}
                 autoCapitalize="none"
@@ -248,10 +250,10 @@ export default function AiConfigScreen({ onGoBack }) {
             </View>
             <View style={styles.formActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={resetForm}>
-                <Text style={styles.cancelBtnText}>取消</Text>
+                <Text style={styles.cancelBtnText}>{t('aiConfig.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-                <Text style={styles.saveBtnText}>{editingId ? '更新' : '添加'}</Text>
+                <Text style={styles.saveBtnText}>{editingId ? t('aiConfig.updateBtn') : t('aiConfig.saveBtn')}</Text>
               </TouchableOpacity>
               {editingId ? (
                 <TouchableOpacity
@@ -262,7 +264,7 @@ export default function AiConfigScreen({ onGoBack }) {
                   {verifying ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
-                    <Text style={styles.saveBtnText}>验证</Text>
+                    <Text style={styles.saveBtnText}>{t('aiConfig.verifyBtn')}</Text>
                   )}
                 </TouchableOpacity>
               ) : null}
@@ -273,8 +275,8 @@ export default function AiConfigScreen({ onGoBack }) {
         {providers.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="sparkles" size={48} color="#ddd" />
-            <Text style={styles.emptyText}>暂无 AI 配置</Text>
-            <Text style={styles.emptySubtext}>点击右上角 + 添加</Text>
+            <Text style={styles.emptyText}>{t('aiConfig.noProviders')}</Text>
+            <Text style={styles.emptySubtext}>{t('aiConfig.noProvidersSub')}</Text>
           </View>
         ) : (
           providers.map((p) => {
@@ -299,7 +301,7 @@ export default function AiConfigScreen({ onGoBack }) {
                       <Text style={styles.providerName}>{p.name}</Text>
                       {p.active ? (
                         <View style={styles.activeBadge}>
-                          <Text style={styles.activeBadgeText}>使用中</Text>
+                          <Text style={styles.activeBadgeText}>{t('aiConfig.activeBadge')}</Text>
                         </View>
                       ) : null}
                     </View>

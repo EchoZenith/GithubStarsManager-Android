@@ -15,8 +15,10 @@ import {
 import { fetchStarredRepos, checkUpdate } from '../services/github';
 import TokenInput from '../components/TokenInput';
 import { colors, spacing, borderRadius, shadows } from '../constants/theme';
+import { useTranslation } from '../i18n';
 
 export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfig, onOpenStats, onOpenCategoryManage }) {
+  const { t, lang, setLang } = useTranslation();
   const [token, setToken] = useState(null);
   const [repoCount, setRepoCount] = useState(0);
   const [showTokenInput, setShowTokenInput] = useState(false);
@@ -62,23 +64,22 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
     setVerifying(true);
     try {
       await fetchStarredRepos(token);
-      Alert.alert('验证成功', 'Token 有效');
+      Alert.alert(t('settings.verifyTitle'), t('settings.verifySuccess'));
     } catch (e) {
-      Alert.alert('验证失败', e.message);
+      Alert.alert(t('settings.verifyFailTitle'), e.message);
     } finally {
       setVerifying(false);
     }
   };
 
-  // 清除 Token（需用户确认）
   const handleClearToken = () => {
     Alert.alert(
-      '清除 Token',
-      '确定要清除 GitHub Token 吗？清除后需要重新输入才能同步数据。',
+      t('settings.clearTitle'),
+      t('settings.clearMessage'),
       [
-        { text: '取消', style: 'cancel' },
+        { text: t('app.cancel'), style: 'cancel' },
         {
-          text: '清除',
+          text: t('settings.clear'),
           style: 'destructive',
           onPress: async () => {
             await clearGitHubToken();
@@ -104,15 +105,15 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
     setCheckingUpdate(false);
 
     if (result.error) {
-      Alert.alert('检查更新', result.error);
+      Alert.alert(t('settings.checkUpdate'), result.error);
     } else if (result.hasUpdate) {
       Alert.alert(
-        '发现新版本',
-        `当前版本：v${result.currentVersion}\n最新版本：v${result.latestVersion}\n\n${result.releaseName || ''}\n\n${result.releaseBody ? result.releaseBody : ''}`,
+        t('settings.updateTitle'),
+        t('settings.updateMessage', { current: result.currentVersion, latest: result.latestVersion, body: result.releaseBody || result.releaseName || '' }),
         [
-          { text: '取消', style: 'cancel' },
+          { text: t('app.cancel'), style: 'cancel' },
           {
-            text: '前往下载',
+            text: t('settings.updateDownload'),
             onPress: () => {
               if (result.releaseUrl) {
                 Linking.openURL(result.releaseUrl);
@@ -122,7 +123,7 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
         ]
       );
     } else {
-      Alert.alert('检查更新', result.message || '已是最新版本');
+      Alert.alert(t('settings.checkUpdate'), result.message || t('settings.noUpdate'));
     }
   };
 
@@ -141,20 +142,20 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
         <TouchableOpacity style={styles.backBtn} onPress={onGoBack}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>设置</Text>
+        <Text style={styles.headerTitle}>{t('settings.title')}</Text>
         <View style={styles.backBtn} />
       </View>
 
       <ScrollView style={styles.scroll}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>GitHub 账号</Text>
+          <Text style={styles.sectionTitle}>{t('settings.githubAccount')}</Text>
           <View style={styles.card}>
             <View style={styles.row}>
               <Ionicons name="key" size={20} color="#0366d6" />
-              <Text style={styles.rowLabel}>访问令牌</Text>
+              <Text style={styles.rowLabel}>{t('settings.accessToken')}</Text>
             </View>
             <Text style={styles.tokenText}>
-              {token ? maskedToken : '未设置'}
+              {token ? maskedToken : t('settings.notSet')}
             </Text>
             <View style={styles.tokenActions}>
               <TouchableOpacity
@@ -163,7 +164,7 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
               >
                 <Ionicons name="create" size={16} color="#fff" />
                 <Text style={styles.tokenBtnText}>
-                  {token ? '修改' : '设置'}
+                  {token ? t('settings.change') : t('settings.set')}
                 </Text>
               </TouchableOpacity>
               {token ? (
@@ -178,7 +179,7 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
                     ) : (
                       <>
                         <Ionicons name="checkmark" size={16} color="#0366d6" />
-                        <Text style={[styles.tokenBtnText, styles.tokenBtnTextOutline]}>验证</Text>
+                        <Text style={[styles.tokenBtnText, styles.tokenBtnTextOutline]}>{t('settings.verify')}</Text>
                       </>
                     )}
                   </TouchableOpacity>
@@ -187,7 +188,7 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
                     onPress={handleClearToken}
                   >
                     <Ionicons name="trash" size={16} color="#fff" />
-                    <Text style={styles.tokenBtnText}>清除</Text>
+                    <Text style={styles.tokenBtnText}>{t('settings.clear')}</Text>
                   </TouchableOpacity>
                 </>
               ) : null}
@@ -200,10 +201,10 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
             <View style={styles.aboutRow}>
               <View style={styles.aboutLeft}>
                 <Ionicons name="stats-chart" size={20} color="#28a745" />
-                <Text style={styles.aboutLabel}>数据统计</Text>
+                <Text style={styles.aboutLabel}>{t('settings.stats')}</Text>
               </View>
               <View style={styles.aboutRight}>
-                <Text style={styles.aboutValue}>{repoCount} 仓库</Text>
+                <Text style={styles.aboutValue}>{t('settings.statsCount', { count: repoCount })}</Text>
                 <Ionicons name="chevron-forward" size={18} color="#ccc" />
               </View>
             </View>
@@ -215,10 +216,10 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
             <View style={styles.aboutRow}>
               <View style={styles.aboutLeft}>
                 <Ionicons name="folder-open" size={20} color="#19b5a0" />
-                <Text style={styles.aboutLabel}>分类管理</Text>
+                <Text style={styles.aboutLabel}>{t('settings.categoryManage')}</Text>
               </View>
               <View style={styles.aboutRight}>
-                <Text style={styles.aboutValue}>{categoryCount} 个</Text>
+                <Text style={styles.aboutValue}>{t('settings.categoryCount', { count: categoryCount })}</Text>
                 <Ionicons name="chevron-forward" size={18} color="#ccc" />
               </View>
             </View>
@@ -230,11 +231,11 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
             <View style={styles.aboutRow}>
               <View style={styles.aboutLeft}>
                 <Ionicons name="sparkles" size={20} color="#8b5cf6" />
-                <Text style={styles.aboutLabel}>AI 配置</Text>
+                <Text style={styles.aboutLabel}>{t('settings.aiConfig')}</Text>
               </View>
               <View style={styles.aboutRight}>
                 {aiProviders.length > 0 ? (
-                  <Text style={styles.aboutValue}>{aiProviders.length} 个</Text>
+                  <Text style={styles.aboutValue}>{t('settings.aiConfigCount', { count: aiProviders.length })}</Text>
                 ) : null}
                 <Ionicons name="chevron-forward" size={18} color="#ccc" />
               </View>
@@ -243,7 +244,22 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>关于</Text>
+          <Text style={styles.sectionTitle}>{t('settings.language')}</Text>
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.langRow} onPress={() => setLang('zh')}>
+              <Text style={[styles.langText, lang === 'zh' && styles.langTextActive]}>{t('settings.languageZh')}</Text>
+              {lang === 'zh' ? <Ionicons name="checkmark" size={18} color={colors.primary} /> : null}
+            </TouchableOpacity>
+            <View style={styles.langDivider} />
+            <TouchableOpacity style={styles.langRow} onPress={() => setLang('en')}>
+              <Text style={[styles.langText, lang === 'en' && styles.langTextActive]}>{t('settings.languageEn')}</Text>
+              {lang === 'en' ? <Ionicons name="checkmark" size={18} color={colors.primary} /> : null}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
           <TouchableOpacity
             style={styles.card}
             onPress={handleCheckUpdate}
@@ -253,14 +269,14 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
             <View style={styles.aboutRow}>
               <View style={styles.aboutLeft}>
                 <Ionicons name="information-circle-outline" size={20} color="#555" />
-                <Text style={styles.aboutLabel}>版本</Text>
+                <Text style={styles.aboutLabel}>{t('settings.version')}</Text>
               </View>
               <View style={styles.aboutRight}>
                 {checkingUpdate ? (
                   <ActivityIndicator size="small" color="#0366d6" />
                 ) : updateInfo && updateInfo.hasUpdate ? (
                   <View style={styles.updateBadge}>
-                    <Text style={styles.updateBadgeText}>有新版本</Text>
+                    <Text style={styles.updateBadgeText}>{t('settings.updateAvailable')}</Text>
                   </View>
                 ) : null}
                 <Text style={styles.aboutValue}>{Constants.expoConfig?.version || '1.0.0'}</Text>
@@ -403,5 +419,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#856404',
     fontWeight: '500',
+  },
+  langRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  langText: {
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  langTextActive: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  langDivider: {
+    height: 1,
+    backgroundColor: colors.borderLight,
   },
 });

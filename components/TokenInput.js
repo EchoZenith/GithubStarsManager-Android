@@ -9,9 +9,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { setGitHubToken } from '../services/database';
 import { fetchStarredRepos } from '../services/github';
 import { colors } from '../constants/theme';
+import { useTranslation } from '../i18n';
 
 // Token 输入页：输入/验证 GitHub Personal Access Token
 export default function TokenInput({ onTokenSaved, onBack }) {
+  const { t } = useTranslation();
   const [token, setToken] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -24,9 +26,9 @@ export default function TokenInput({ onTokenSaved, onBack }) {
         onBack();
         return true;
       }
-      Alert.alert('退出应用', '确定要退出吗？', [
-        { text: '取消', style: 'cancel' },
-        { text: '退出', style: 'destructive', onPress: () => BackHandler.exitApp() },
+      Alert.alert(t('app.exitTitle'), t('app.exitMessage'), [
+        { text: t('app.cancel'), style: 'cancel' },
+        { text: t('app.exit'), style: 'destructive', onPress: () => BackHandler.exitApp() },
       ]);
       return true;
     };
@@ -38,7 +40,7 @@ export default function TokenInput({ onTokenSaved, onBack }) {
   const handleVerify = async () => {
     const trimmed = token.trim();
     if (!trimmed) {
-      Alert.alert('提示', '请输入 GitHub Token');
+      Alert.alert(t('common.confirm'), t('tokenInput.emptyToken'));
       return;
     }
     setVerifying(true);
@@ -47,7 +49,7 @@ export default function TokenInput({ onTokenSaved, onBack }) {
       await setGitHubToken(trimmed);
       onTokenSaved();
     } catch (e) {
-      Alert.alert('验证失败', e.message);
+      Alert.alert(t('tokenInput.verifyFailed'), e.message);
     } finally {
       setVerifying(false);
     }
@@ -64,7 +66,7 @@ export default function TokenInput({ onTokenSaved, onBack }) {
           <TouchableOpacity style={styles.topBarBack} onPress={onBack}>
             <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.topBarTitle}>设置 Token</Text>
+          <Text style={styles.topBarTitle}>{t('tokenInput.title')}</Text>
           <View style={styles.topBarBack} />
         </View>
       ) : null}
@@ -74,7 +76,7 @@ export default function TokenInput({ onTokenSaved, onBack }) {
         </View>
         <Text style={styles.title}>GitHub Stars</Text>
         <Text style={styles.subtitle}>
-          请输入你的 GitHub Personal Access Token 以同步星标仓库
+          {t('tokenInput.subtitle')}
         </Text>
 
         <View style={styles.inputWrap}>
@@ -82,7 +84,7 @@ export default function TokenInput({ onTokenSaved, onBack }) {
             style={styles.input}
             value={token}
             onChangeText={setToken}
-            placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+            placeholder={t('tokenInput.placeholder')}
             placeholderTextColor="#bbb"
             secureTextEntry={!visible}
             autoCapitalize="none"
@@ -110,7 +112,7 @@ export default function TokenInput({ onTokenSaved, onBack }) {
           ) : (
             <>
               <Ionicons name="checkmark-circle" size={20} color="#fff" />
-              <Text style={styles.verifyBtnText}>验证并保存</Text>
+              <Text style={styles.verifyBtnText}>{t('tokenInput.save')}</Text>
             </>
           )}
         </TouchableOpacity>
@@ -120,7 +122,7 @@ export default function TokenInput({ onTokenSaved, onBack }) {
           onPress={() => setShowHelp(!showHelp)}
         >
           <Ionicons name="help-circle-outline" size={16} color="#0366d6" />
-          <Text style={styles.helpBtnText}>如何创建 GitHub Token？</Text>
+          <Text style={styles.helpBtnText}>{t('tokenInput.helpTitle')}</Text>
           <Ionicons
             name={showHelp ? 'chevron-up' : 'chevron-down'}
             size={16}
@@ -130,24 +132,16 @@ export default function TokenInput({ onTokenSaved, onBack }) {
 
         {showHelp ? (
           <View style={styles.helpPanel}>
-            <Text style={styles.helpStep}>
-              1. 访问 GitHub Settings → Developer settings → Personal access tokens
-            </Text>
-            <Text style={styles.helpStep}>
-              2. 点击 "Generate new token (classic)"
-            </Text>
-            <Text style={styles.helpStep}>
-              3. 选择权限范围：repo 和 user
-            </Text>
-            <Text style={styles.helpStep}>
-              4. 复制生成的 token 并粘贴到上方输入框
-            </Text>
+            <Text style={styles.helpStep}>{t('tokenInput.step1')}</Text>
+            <Text style={styles.helpStep}>{t('tokenInput.step2')}</Text>
+            <Text style={styles.helpStep}>{t('tokenInput.step3')}</Text>
+            <Text style={styles.helpStep}>{t('tokenInput.step4')}</Text>
             <TouchableOpacity
               style={styles.helpLink}
               onPress={() => Linking.openURL('https://github.com/settings/tokens')}
             >
               <Ionicons name="open-outline" size={14} color="#0366d6" />
-              <Text style={styles.helpLinkText}>前往 GitHub 生成 Token</Text>
+              <Text style={styles.helpLinkText}>{t('tokenInput.gotoGithub')}</Text>
             </TouchableOpacity>
           </View>
         ) : null}
