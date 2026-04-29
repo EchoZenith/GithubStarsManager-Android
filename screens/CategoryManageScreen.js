@@ -10,6 +10,7 @@ import {
   getUncategorizedRepos, batchSetRepoCategories, getRepoCountByCategory
 } from '../services/database';
 import { runAutoCategorize } from '../services/categorizer';
+import { colors, spacing, borderRadius, shadows } from '../constants/theme';
 
 // 可选的颜色列表（给分类标签选择用）
 const CAT_COLORS = ['#0366d6', '#28a745', '#d73a4a', '#6f42c1', '#e36209', '#19b5a0', '#f0ad4e', '#8b5cf6', '#1abc9c', '#3498db', '#9b59b6', '#e67e22', '#2c3e50'];
@@ -218,7 +219,7 @@ export default function CategoryManageScreen({ onGoBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   center: {
     flex: 1,

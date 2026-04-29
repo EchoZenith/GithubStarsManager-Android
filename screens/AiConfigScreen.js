@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { getAiProviders, saveAiProviders, migrateOldAiConfig } from '../services/database';
 import { verifyAiConfig } from '../services/ai';
+import { colors } from '../constants/theme';
 
 const DEFAULT_ENDPOINTS = [
   { name: 'DeepSeek', endpoint: 'https://api.deepseek.com', model: 'deepseek-v4-flash' },
@@ -321,7 +322,7 @@ export default function AiConfigScreen({ onGoBack }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

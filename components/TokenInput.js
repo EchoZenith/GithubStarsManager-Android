@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { setGitHubToken } from '../services/database';
 import { fetchStarredRepos } from '../services/github';
+import { colors } from '../constants/theme';
 
 // Token 输入页：输入/验证 GitHub Personal Access Token
 export default function TokenInput({ onTokenSaved, onBack }) {
