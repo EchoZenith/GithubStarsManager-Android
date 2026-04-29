@@ -10,6 +10,7 @@ import { fetchReadme, TokenExpiredError } from '../services/github';
 import { getGitHubToken, getAiAnalysis, saveAiAnalysis } from '../services/database';
 import { analyzeRepository } from '../services/ai';
 import { renderReadme } from '../services/markdownRenderer';
+import { colors, spacing, borderRadius, shadows } from '../constants/theme';
 
 export default function RepoDetailScreen({ repo, onGoBack }) {
   const [readmeHtml, setReadmeHtml] = useState(null);
@@ -47,8 +48,17 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
       const markdown = await fetchReadme(token, repo.full_name);
       setReadmeRaw(markdown);
       if (markdown) {
-        const html = renderReadme(markdown, repo.full_name, repo.default_branch);
-        setReadmeHtml(html);
+        setTimeout(() => {
+          try {
+            const html = renderReadme(markdown, repo.full_name, repo.default_branch);
+            setReadmeHtml(html);
+          } catch {
+            setError('README 渲染失败');
+          }
+          setLoading(false);
+        }, 50);
+      } else {
+        setLoading(false);
       }
     } catch (e) {
       if (e instanceof TokenExpiredError) {
@@ -56,7 +66,6 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
       } else {
         setError(e.message || '加载 README 失败');
       }
-    } finally {
       setLoading(false);
     }
   };
@@ -254,18 +263,18 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'ios' ? 50 : 40,
-    paddingBottom: 10,
-    paddingHorizontal: 8,
+    backgroundColor: colors.surface,
+    paddingTop: Platform.OS === 'ios' ? 50 : spacing.xxxl,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
+    borderBottomColor: colors.border,
   },
   headerBtn: {
     width: 40,
@@ -277,26 +286,22 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: colors.textPrimary,
     textAlign: 'center',
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: spacing.xxxl,
   },
   infoCard: {
-    backgroundColor: '#fff',
-    margin: 12,
+    backgroundColor: colors.surface,
+    margin: spacing.lg,
     marginBottom: 0,
-    borderRadius: 12,
-    padding: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    ...shadows.md,
   },
   infoRow: {
     flexDirection: 'row',
@@ -306,7 +311,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   infoText: {
     flex: 1,
@@ -314,20 +319,20 @@ const styles = StyleSheet.create({
   repoName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#0366d6',
-    marginBottom: 4,
+    color: colors.primary,
+    marginBottom: spacing.xs,
   },
   repoDesc: {
     fontSize: 13,
-    color: '#666',
+    color: colors.textSecondary,
     lineHeight: 18,
   },
   statsRow: {
     flexDirection: 'row',
-    marginTop: 14,
-    paddingTop: 12,
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: colors.borderLight,
     justifyContent: 'space-around',
   },
   statItem: {
@@ -336,146 +341,146 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: colors.textPrimary,
   },
   statLabel: {
     fontSize: 11,
-    color: '#999',
-    marginTop: 2,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
   },
   readmeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 6,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
   },
   readmeTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#555',
+    color: colors.textSecondary,
   },
   readmePlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
-    marginHorizontal: 12,
-    marginBottom: 12,
-    borderRadius: 12,
-    backgroundColor: '#fff',
+    padding: spacing.xxxl,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.surface,
     minHeight: 200,
   },
   loadingText: {
-    marginTop: 10,
-    color: '#888',
+    marginTop: spacing.md,
+    color: colors.textMuted,
     fontSize: 14,
   },
   errorText: {
-    marginTop: 10,
-    color: '#d73a4a',
+    marginTop: spacing.md,
+    color: colors.accentRed,
     fontSize: 14,
     textAlign: 'center',
   },
   emptyText: {
-    marginTop: 10,
-    color: '#999',
+    marginTop: spacing.md,
+    color: colors.textMuted,
     fontSize: 14,
   },
   webViewWrap: {
-    marginHorizontal: 12,
-    marginBottom: 12,
-    borderRadius: 12,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
   },
   aiCard: {
     backgroundColor: '#f5f0ff',
-    marginHorizontal: 12,
-    marginTop: 12,
-    borderRadius: 12,
-    padding: 14,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     borderWidth: 1,
     borderColor: '#e8dfff',
   },
   aiCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
   },
   aiCardTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#8b5cf6',
+    color: colors.accentPurple,
   },
   aiSummary: {
     fontSize: 14,
-    color: '#333',
+    color: colors.textPrimary,
     lineHeight: 20,
   },
   aiTagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 8,
-    gap: 6,
+    marginTop: spacing.sm,
+    gap: spacing.xs,
   },
   aiTag: {
     backgroundColor: '#e8dfff',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
   },
   aiTagText: {
     fontSize: 11,
-    color: '#8b5cf6',
+    color: colors.accentPurple,
     fontWeight: '500',
   },
   aiPlatformsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    marginTop: 6,
-    gap: 4,
+    marginTop: spacing.xs,
+    gap: spacing.xs,
   },
   aiPlatform: {
-    backgroundColor: '#f0f0f0',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    backgroundColor: colors.borderLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
   },
   aiPlatformText: {
     fontSize: 11,
-    color: '#555',
+    color: colors.textSecondary,
   },
   aiAnalyzeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 12,
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 10,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: '#e8dfff',
     backgroundColor: '#faf8ff',
-    gap: 6,
+    gap: spacing.xs,
   },
   aiAnalyzeText: {
     fontSize: 14,
-    color: '#8b5cf6',
+    color: colors.accentPurple,
     fontWeight: '500',
   },
   aiErrorCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 12,
-    marginTop: 8,
-    gap: 6,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    gap: spacing.xs,
   },
   aiErrorText: {
     flex: 1,
     fontSize: 12,
-    color: '#d73a4a',
+    color: colors.accentRed,
     lineHeight: 16,
   },
 });

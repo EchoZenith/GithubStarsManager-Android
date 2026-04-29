@@ -9,6 +9,7 @@ import {
   getAllCategories, getTotalRepoCount,
   getRepoCountByCategory,
 } from '../services/database';
+import { colors } from '../constants/theme';
 
 export default function StatsScreen({ onGoBack }) {
   const [stats, setStats] = useState({ repos: 0, categories: 0 });
@@ -98,7 +99,7 @@ export default function StatsScreen({ onGoBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',

@@ -14,6 +14,7 @@ import {
 } from '../services/database';
 import { fetchStarredRepos, checkUpdate } from '../services/github';
 import TokenInput from '../components/TokenInput';
+import { colors, spacing, borderRadius, shadows } from '../constants/theme';
 
 export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfig, onOpenStats, onOpenCategoryManage }) {
   const [token, setToken] = useState(null);
@@ -278,18 +279,18 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'ios' ? 50 : 40,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
+    backgroundColor: colors.surface,
+    paddingTop: Platform.OS === 'ios' ? 50 : spacing.xxxl,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
+    borderBottomColor: colors.border,
   },
   backBtn: {
     width: 40,
@@ -300,70 +301,66 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: colors.textPrimary,
   },
   scroll: {
     flex: 1,
   },
   section: {
-    marginTop: 20,
-    paddingHorizontal: 16,
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#888',
-    marginBottom: 8,
-    marginLeft: 4,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
     textTransform: 'uppercase',
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    ...shadows.sm,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   rowLabel: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#333',
+    color: colors.textPrimary,
   },
   tokenText: {
     fontSize: 13,
-    color: '#888',
+    color: colors.textMuted,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   tokenActions: {
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing.sm,
   },
   tokenBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0366d6',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 4,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.sm,
+    gap: spacing.xs,
   },
   tokenBtnOutline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#0366d6',
+    borderColor: colors.primary,
   },
   tokenBtnDanger: {
-    backgroundColor: '#d73a4a',
+    backgroundColor: colors.accentRed,
   },
   tokenBtnText: {
     color: '#fff',
@@ -371,7 +368,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   tokenBtnTextOutline: {
-    color: '#0366d6',
+    color: colors.primary,
   },
   aboutRow: {
     flexDirection: 'row',
@@ -381,26 +378,26 @@ const styles = StyleSheet.create({
   aboutLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
   },
   aboutRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing.sm,
   },
   aboutLabel: {
     fontSize: 15,
-    color: '#333',
+    color: colors.textPrimary,
   },
   aboutValue: {
     fontSize: 15,
-    color: '#888',
+    color: colors.textMuted,
   },
   updateBadge: {
     backgroundColor: '#fff3cd',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
   },
   updateBadgeText: {
     fontSize: 11,
