@@ -9,12 +9,13 @@ import Constants from 'expo-constants';
 import {
   getGitHubToken, clearGitHubToken,
   getTotalRepoCount,
+  getAllCategories,
   getAiProviders,
 } from '../services/database';
 import { fetchStarredRepos, checkUpdate } from '../services/github';
 import TokenInput from '../components/TokenInput';
 
-export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfig, onOpenStats }) {
+export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfig, onOpenStats, onOpenCategoryManage }) {
   const [token, setToken] = useState(null);
   const [repoCount, setRepoCount] = useState(0);
   const [showTokenInput, setShowTokenInput] = useState(false);
@@ -22,6 +23,7 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
   const [aiProviders, setAiProviders] = useState([]);
+  const [categoryCount, setCategoryCount] = useState(0);
   const goBackRef = useRef(onGoBack);
   goBackRef.current = onGoBack;
 
@@ -32,6 +34,8 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
     setRepoCount(total);
     const aList = await getAiProviders();
     setAiProviders(aList);
+    const cats = await getAllCategories();
+    setCategoryCount(cats.length);
   };
 
   useEffect(() => {
@@ -199,6 +203,21 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
               </View>
               <View style={styles.aboutRight}>
                 <Text style={styles.aboutValue}>{repoCount} 仓库</Text>
+                <Ionicons name="chevron-forward" size={18} color="#ccc" />
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.card} onPress={onOpenCategoryManage} activeOpacity={0.7}>
+            <View style={styles.aboutRow}>
+              <View style={styles.aboutLeft}>
+                <Ionicons name="folder-open" size={20} color="#19b5a0" />
+                <Text style={styles.aboutLabel}>分类管理</Text>
+              </View>
+              <View style={styles.aboutRight}>
+                <Text style={styles.aboutValue}>{categoryCount} 个</Text>
                 <Ionicons name="chevron-forward" size={18} color="#ccc" />
               </View>
             </View>

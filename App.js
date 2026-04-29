@@ -14,6 +14,7 @@ export default function App() {
   // 当前显示的页面：loading / token_input / home / settings / repo_detail / category_manage
   const [screen, setScreen] = useState('loading');
   const [selectedRepo, setSelectedRepo] = useState(null);
+  const [prevScreen, setPrevScreen] = useState('home');
 
   // 启动时检查是否已存在 Token，决定进入首页或 Token 输入页
   useEffect(() => {
@@ -49,6 +50,11 @@ export default function App() {
     setScreen('home');
   };
 
+  const handleOpenCategoryManage = (fromScreen) => {
+    setPrevScreen(fromScreen);
+    setScreen('category_manage');
+  };
+
   // 根据 screen 状态渲染对应页面
   if (screen === 'loading') {
     return (
@@ -75,6 +81,7 @@ export default function App() {
           onTokenExpired={handleTokenExpired}
           onOpenAiConfig={() => setScreen('ai_config')}
           onOpenStats={() => setScreen('stats')}
+          onOpenCategoryManage={() => handleOpenCategoryManage('settings')}
         />
       </ScreenTransition>
     );
@@ -95,7 +102,7 @@ export default function App() {
     return (
       <ScreenTransition id="category_manage">
         <CategoryManageScreen
-          onGoBack={() => setScreen('home')}
+          onGoBack={() => setScreen(prevScreen)}
         />
       </ScreenTransition>
     );
@@ -127,7 +134,6 @@ export default function App() {
         onTokenExpired={handleTokenExpired}
         onOpenSettings={() => setScreen('settings')}
         onOpenRepoDetail={handleOpenRepoDetail}
-        onOpenCategoryManage={() => setScreen('category_manage')}
       />
     </ScreenTransition>
   );
