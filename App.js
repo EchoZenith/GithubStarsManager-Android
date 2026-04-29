@@ -9,8 +9,10 @@ import RepoDetailScreen from './screens/RepoDetailScreen';
 import CategoryManageScreen from './screens/CategoryManageScreen';
 import AiConfigScreen from './screens/AiConfigScreen';
 import StatsScreen from './screens/StatsScreen';
+import { I18nProvider, useTranslation } from './i18n';
 
-export default function App() {
+function AppContent() {
+  const { t } = useTranslation();
   // 当前显示的页面：loading / token_input / home / settings / repo_detail / category_manage
   const [screen, setScreen] = useState('loading');
   const [selectedRepo, setSelectedRepo] = useState(null);
@@ -60,7 +62,7 @@ export default function App() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#0366d6" />
-        <Text style={styles.loadingText}>启动中...</Text>
+        <Text style={styles.loadingText}>{t('app.loading')}</Text>
       </View>
     );
   }
@@ -136,6 +138,14 @@ export default function App() {
         onOpenRepoDetail={handleOpenRepoDetail}
       />
     </ScreenTransition>
+  );
+}
+
+export default function App() {
+  return (
+    <I18nProvider>
+      <AppContent />
+    </I18nProvider>
   );
 }
 

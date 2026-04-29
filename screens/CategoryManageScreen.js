@@ -11,12 +11,14 @@ import {
 } from '../services/database';
 import { runAutoCategorize } from '../services/categorizer';
 import { colors, spacing, borderRadius, shadows } from '../constants/theme';
+import { useTranslation } from '../i18n';
 
 // 可选的颜色列表（给分类标签选择用）
 const CAT_COLORS = ['#0366d6', '#28a745', '#d73a4a', '#6f42c1', '#e36209', '#19b5a0', '#f0ad4e', '#8b5cf6', '#1abc9c', '#3498db', '#9b59b6', '#e67e22', '#2c3e50'];
 
 // 分类管理页：查看/新增/编辑/删除分类
 export default function CategoryManageScreen({ onGoBack }) {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -80,7 +82,7 @@ export default function CategoryManageScreen({ onGoBack }) {
   const handleSave = async () => {
     const trimmed = formName.trim();
     if (!trimmed) {
-      Alert.alert('提示', '分类名称不能为空');
+      Alert.alert(t('common.confirm'), t('categoryManage.nameRequired'));
       return;
     }
     try {
@@ -95,19 +97,19 @@ export default function CategoryManageScreen({ onGoBack }) {
       closeForm();
       await loadData();
     } catch (e) {
-      Alert.alert('错误', e.message || '保存失败');
+      Alert.alert(t('common.confirm'), e.message || t('categoryManage.saveFailed'));
     }
   };
 
   // 删除分类（该分类下的仓库变为未分类）
   const handleDelete = (cat) => {
     Alert.alert(
-      '删除分类',
-      `确定要删除「${cat.name}」吗？该分类下的仓库将变为未分类状态。`,
+      t('categoryManage.deleteTitle'),
+      t('categoryManage.deleteConfirm', { name: cat.name }),
       [
-        { text: '取消', style: 'cancel' },
+        { text: t('app.cancel'), style: 'cancel' },
         {
-          text: '删除',
+          text: t('app.delete'),
           style: 'destructive',
           onPress: async () => {
             await deleteCategory(cat.id);
@@ -133,7 +135,7 @@ export default function CategoryManageScreen({ onGoBack }) {
         <TouchableOpacity style={styles.headerBtn} onPress={onGoBack}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>分类管理</Text>
+        <Text style={styles.headerTitle}>{t('categoryManage.title')}</Text>
         <TouchableOpacity style={styles.headerBtn} onPress={openAddForm}>
           <Ionicons name="add" size={26} color="#0366d6" />
         </TouchableOpacity>
@@ -144,18 +146,18 @@ export default function CategoryManageScreen({ onGoBack }) {
         {showForm ? (
           <View style={styles.formCard}>
             <Text style={styles.formTitle}>
-              {editingCat ? '编辑分类' : '新建分类'}
+              {editingCat ? t('categoryManage.editCategory') : t('categoryManage.newCategory')}
             </Text>
-            <Text style={styles.fieldLabel}>名称</Text>
+            <Text style={styles.fieldLabel}>{t('categoryManage.nameLabel')}</Text>
             <TextInput
               style={styles.input}
               value={formName}
               onChangeText={setFormName}
-              placeholder="输入分类名称"
+              placeholder={t('categoryManage.inputPlaceholder')}
               placeholderTextColor="#bbb"
               autoFocus
             />
-            <Text style={styles.fieldLabel}>颜色</Text>
+            <Text style={styles.fieldLabel}>{t('categoryManage.colorLabel')}</Text>
             <View style={styles.colorPicker}>
               {CAT_COLORS.map((color) => (
                 <TouchableOpacity
@@ -171,11 +173,11 @@ export default function CategoryManageScreen({ onGoBack }) {
             </View>
             <View style={styles.formActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={closeForm}>
-                <Text style={styles.cancelBtnText}>取消</Text>
+                <Text style={styles.cancelBtnText}>{t('app.cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
                 <Text style={styles.saveBtnText}>
-                  {editingCat ? '更新' : '创建'}
+                  {editingCat ? t('app.update') : t('categoryManage.saveBtn')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -189,7 +191,7 @@ export default function CategoryManageScreen({ onGoBack }) {
               <View style={styles.catItemInfo}>
                 <Text style={styles.catItemName}>{cat.name}</Text>
                 <Text style={styles.catItemCount}>
-                  {stats[cat.id] || 0} 个仓库
+                  {t('categoryManage.repoCount', { count: stats[cat.id] || 0 })}
                 </Text>
               </View>
             </View>

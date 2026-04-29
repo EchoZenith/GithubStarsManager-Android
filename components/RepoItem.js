@@ -2,8 +2,10 @@ import { useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius, shadows, typography } from '../constants/theme';
+import { useTranslation } from '../i18n';
 
 function RepoItemContent({ item, showCategory }) {
+  const { t } = useTranslation();
   const categories = item.categories || [];
 
   return (
@@ -28,7 +30,7 @@ function RepoItemContent({ item, showCategory }) {
       </View>
 
       <Text style={styles.repoDesc} numberOfLines={2}>
-        {item.description || '暂无描述'}
+        {item.description || t('common.noDesc')}
       </Text>
 
       <View style={styles.statsRow}>

@@ -17,9 +17,11 @@ import {
 import { runAutoCategorize } from '../services/categorizer';
 import { analyzeRepository } from '../services/ai';
 import { colors, spacing, borderRadius, shadows } from '../constants/theme';
+import { useTranslation } from '../i18n';
 
 // 首页：仓库列表、分类标签栏、同步入口
 export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoDetail }) {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState([]);
   // selectedCategory: null=全部, 0=未分类, >0=具体分类 ID
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -54,7 +56,7 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
       setCategories(cats);
       await loadRepos(selectedCategory);
     } catch (e) {
-      console.error('加载数据失败:', e);
+      console.error('load data failed:', e);
     } finally {
       setLoading(false);
     }
@@ -67,9 +69,9 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
   // Android 硬件返回按钮退出应用
   useEffect(() => {
     const onBackPress = () => {
-      Alert.alert('退出应用', '确定要退出吗？', [
-        { text: '取消', style: 'cancel' },
-        { text: '退出', style: 'destructive', onPress: () => BackHandler.exitApp() },
+      Alert.alert(t('app.exitTitle'), t('app.exitMessage'), [
+        { text: t('app.cancel'), style: 'cancel' },
+        { text: t('app.exit'), style: 'destructive', onPress: () => BackHandler.exitApp() },
       ]);
       return true;
     };
@@ -90,13 +92,13 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
       return;
     }
     setSyncing(true);
-    setSyncInfo('正在从 GitHub 获取星标仓库...');
+    setSyncInfo(t('home.syncInProgress'));
     try {
       const reposData = await fetchStarredRepos(token);
       const count = await saveRepos(reposData);
       const cats = await getAllCategories();
       await runAutoCategorize(cats, getUncategorizedRepos, batchSetRepoCategories);
-      setSyncInfo(`同步完成，新增 ${count} 个仓库（共 ${reposData.length} 个）`);
+      setSyncInfo(t('home.syncDone', { count, total: reposData.length }));
       setCategories(cats);
       await loadRepos(selectedCategory);
       setTimeout(() => setSyncInfo(''), 3000);
@@ -104,7 +106,7 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
       if (e instanceof TokenExpiredError) {
         onTokenExpired();
       } else {
-        Alert.alert('同步失败', e.message);
+        Alert.alert(t('home.syncFailed'), e.message);
       }
     } finally {
       setSyncing(false);
@@ -120,32 +122,30 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
     }
   };
 
-  // 长按仓库时提示去设置页面管理分类
   const handleRepoLongPress = () => {
-    Alert.alert('管理分类', '请前往设置页面管理仓库分类', [
-      { text: '取消', style: 'cancel' },
-      { text: '前往', onPress: onOpenSettings },
+    Alert.alert(t('home.manageCategory'), t('home.manageCategoryMsg'), [
+      { text: t('app.cancel'), style: 'cancel' },
+      { text: t('app.go'), onPress: onOpenSettings },
     ]);
   };
 
-  // AI 批量分析
   const handleAiAnalyze = () => {
     if (aiAnalyzing) {
       cancelAiRef.current = true;
       return;
     }
-    Alert.alert('AI 批量分析', '选择要分析的范围', [
-      { text: '取消', style: 'cancel' },
-      { text: '分析全部', onPress: () => runAiBatch('all') },
-      { text: '分析未分析的', onPress: () => runAiBatch('unanalyzed') },
-      { text: '重新分析失败的', onPress: () => runAiBatch('failed') },
+    Alert.alert(t('home.aiBatchTitle'), t('home.aiBatchMessage'), [
+      { text: t('app.cancel'), style: 'cancel' },
+      { text: t('home.aiAll'), onPress: () => runAiBatch('all') },
+      { text: t('home.aiUnanalyzed'), onPress: () => runAiBatch('unanalyzed') },
+      { text: t('home.aiFailed'), onPress: () => runAiBatch('failed') },
     ]);
   };
 
   const runAiBatch = async (mode) => {
     const config = await getActiveAiConfig();
     if (!config) {
-      Alert.alert('提示', '请先在设置中配置 AI');
+      Alert.alert(t('app.confirm'), t('home.aiNoConfig'));
       return;
     }
 
@@ -159,13 +159,13 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
     }
 
     if (targetRepos.length === 0) {
-      Alert.alert('提示', '没有需要分析的仓库');
+      Alert.alert(t('app.confirm'), t('home.aiNoRepos'));
       return;
     }
 
     cancelAiRef.current = false;
     setAiAnalyzing(true);
-    setAiProgress({ current: 0, total: targetRepos.length, label: '准备中...' });
+    setAiProgress({ current: 0, total: targetRepos.length, label: t('home.aiPreparing') });
 
     let success = 0;
     let fail = 0;
@@ -193,24 +193,25 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
     setAiAnalyzing(false);
     setAiProgress({ current: 0, total: 0, label: '' });
     await loadRepos(selectedCategory);
+    const failedStr = fail > 0 ? t('home.aiFailSuffix', { count: fail }) : '';
     if (wasCancelled) {
-      Alert.alert('已停止', `已分析 ${success} 个${fail > 0 ? `，失败 ${fail} 个` : ''}`);
+      Alert.alert(t('home.aiStopped'), t('home.aiStoppedResult', { success, failed: failedStr }));
     } else {
-      Alert.alert('分析完成', `成功 ${success} 个${fail > 0 ? `，失败 ${fail} 个` : ''}`);
+      Alert.alert(t('home.aiCompleted'), t('home.aiCompletedResult', { success, failed: failedStr }));
     }
   };
 
   const currentCategoryName = selectedCategory === null
-    ? '全部仓库'
+    ? t('home.allRepos')
     : selectedCategory === 0
-      ? '未分类'
-      : categories.find(c => c.id === selectedCategory)?.name || '全部仓库';
+      ? t('home.uncategorized')
+      : categories.find(c => c.id === selectedCategory)?.name || t('home.allRepos');
 
   if (loading) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#0366d6" />
-        <Text style={styles.loadingText}>加载中...</Text>
+        <Text style={styles.loadingText}>{t('home.loadingData')}</Text>
       </View>
     );
   }
@@ -221,7 +222,7 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
 
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.headerTitle}>GitHub Stars</Text>
+          <Text style={styles.headerTitle}>{t('home.title')}</Text>
           <View style={styles.headerActions}>
             <TouchableOpacity
               style={styles.headerBtn}
@@ -261,7 +262,7 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
         <View style={styles.aiProgressBar}>
           <ActivityIndicator size="small" color="#8b5cf6" />
           <Text style={styles.aiProgressText}>
-            AI 分析中 {aiProgress.current}/{aiProgress.total}
+            {t('home.aiProgress', { current: aiProgress.current, total: aiProgress.total })}
           </Text>
           <Text style={styles.aiProgressLabel} numberOfLines={1}>{aiProgress.label}</Text>
         </View>
@@ -282,7 +283,7 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
                 selectedCategory === null && styles.categoryTabTextActive,
               ]}
             >
-              全部
+              {t('home.allTab')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -298,7 +299,7 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
                 selectedCategory === 0 && styles.categoryTabTextActive,
               ]}
             >
-              未分类
+              {t('home.uncategorized')}
             </Text>
           </TouchableOpacity>
           {categories.map((cat) => (
@@ -328,13 +329,13 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{currentCategoryName}</Text>
-        <Text style={styles.sectionCount}>{repos.length} 个仓库</Text>
+        <Text style={styles.sectionCount}>{t('home.count', { count: repos.length })}</Text>
       </View>
 
       {syncing ? (
         <View style={styles.syncingBar}>
           <ActivityIndicator size="small" color="#fff" />
-          <Text style={styles.syncingText}>同步中...</Text>
+          <Text style={styles.syncingText}>{t('home.syncing')}</Text>
         </View>
       ) : null}
 
@@ -357,8 +358,8 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
             <Ionicons name="star-outline" size={48} color="#ccc" />
             <Text style={styles.emptyText}>
               {selectedCategory === 0
-                ? '没有未分类的仓库'
-                : '暂无仓库数据\n点击右上角 ☁️ 按钮从 GitHub 同步'}
+                ? t('home.noUncategorized')
+                : t('home.noRepos')}
             </Text>
           </View>
         }
