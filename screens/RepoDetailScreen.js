@@ -48,8 +48,17 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
       const markdown = await fetchReadme(token, repo.full_name);
       setReadmeRaw(markdown);
       if (markdown) {
-        const html = renderReadme(markdown, repo.full_name, repo.default_branch);
-        setReadmeHtml(html);
+        setTimeout(() => {
+          try {
+            const html = renderReadme(markdown, repo.full_name, repo.default_branch);
+            setReadmeHtml(html);
+          } catch {
+            setError('README 渲染失败');
+          }
+          setLoading(false);
+        }, 50);
+      } else {
+        setLoading(false);
       }
     } catch (e) {
       if (e instanceof TokenExpiredError) {
@@ -57,7 +66,6 @@ export default function RepoDetailScreen({ repo, onGoBack }) {
       } else {
         setError(e.message || '加载 README 失败');
       }
-    } finally {
       setLoading(false);
     }
   };
