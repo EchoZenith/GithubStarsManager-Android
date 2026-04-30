@@ -81,7 +81,11 @@
     "checkFailed": "Update check failed",
     "language": "Language",
     "languageZh": "中文",
-    "languageEn": "English"
+    "languageEn": "English",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
   },
   "repoDetail": {
     "title": "Repo Detail",

@@ -81,7 +81,11 @@
         "checkFailed": "检查更新失败",
         "language": "语言",
         "languageZh": "中文",
-        "languageEn": "English"
+        "languageEn": "English",
+        "theme": "主题",
+        "themeLight": "浅色",
+        "themeDark": "深色",
+        "themeSystem": "跟随系统"
     },
     "repoDetail": {
         "title": "仓库详情",

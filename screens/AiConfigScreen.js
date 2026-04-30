@@ -7,7 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { getAiProviders, saveAiProviders, migrateOldAiConfig } from '../services/database';
 import { verifyAiConfig } from '../services/ai';
-import { colors } from '../constants/theme';
+import { useTheme } from '../constants/ThemeContext';
 import { useTranslation } from '../i18n';
 
 const DEFAULT_ENDPOINTS = [
@@ -19,6 +19,7 @@ const DEFAULT_ENDPOINTS = [
 
 export default function AiConfigScreen({ onGoBack }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -166,98 +167,98 @@ export default function AiConfigScreen({ onGoBack }) {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#8b5cf6" />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.accentPurple} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={colors.background === '#0d1117' ? 'light' : 'dark'} />
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.headerBtn} onPress={onGoBack}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('aiConfig.title')}</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('aiConfig.title')}</Text>
         <TouchableOpacity style={styles.headerBtn} onPress={openNewForm}>
-          <Ionicons name="add" size={26} color="#8b5cf6" />
+          <Ionicons name="add" size={26} color={colors.accentPurple} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView style={[styles.scroll, { backgroundColor: colors.background }]} keyboardShouldPersistTaps="handled">
 
         {showPreset ? (
           <View style={styles.presetRow}>
             {DEFAULT_ENDPOINTS.map((preset) => (
               <TouchableOpacity
                 key={preset.name}
-                style={styles.presetBtn}
+                style={[styles.presetBtn, { backgroundColor: colors.surface }]}
                 onPress={() => applyPreset(preset)}
               >
-                <Text style={styles.presetBtnText}>{preset.name === '__custom__' ? t('aiConfig.presetCustom') : preset.name}</Text>
+                <Text style={[styles.presetBtnText, { color: colors.accentPurple }]}>{preset.name === '__custom__' ? t('aiConfig.presetCustom') : preset.name}</Text>
               </TouchableOpacity>
             ))}
           </View>
         ) : null}
 
         {(editingId !== null || formName || formKey || showPreset) ? (
-          <View style={styles.formCard}>
-            <Text style={styles.formTitle}>{editingId ? t('aiConfig.editProvider') : t('aiConfig.newProvider')}</Text>
-            <Text style={styles.fieldLabel}>{t('aiConfig.nameLabel')}</Text>
+          <View style={[styles.formCard, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.formTitle, { color: colors.textPrimary }]}>{editingId ? t('aiConfig.editProvider') : t('aiConfig.newProvider')}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t('aiConfig.nameLabel')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
               value={formName}
               onChangeText={setFormName}
               placeholder={t('aiConfig.namePlaceholder')}
-              placeholderTextColor="#bbb"
+              placeholderTextColor={colors.textMuted}
             />
-            <Text style={styles.fieldLabel}>{t('aiConfig.apiEndpoint')}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t('aiConfig.apiEndpoint')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
               value={formEndpoint}
               onChangeText={setFormEndpoint}
               placeholder={t('aiConfig.endpointPlaceholder')}
-              placeholderTextColor="#bbb"
+              placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <Text style={styles.fieldLabel}>{t('aiConfig.modelLabel')}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t('aiConfig.modelLabel')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
               value={formModel}
               onChangeText={setFormModel}
               placeholder={t('aiConfig.modelPlaceholder')}
-              placeholderTextColor="#bbb"
+              placeholderTextColor={colors.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <Text style={styles.fieldLabel}>{t('aiConfig.apiKey')}</Text>
-            <View style={styles.keyRow}>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t('aiConfig.apiKey')}</Text>
+            <View style={[styles.keyRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
               <TextInput
-                style={styles.keyInput}
+                style={[styles.keyInput, { color: colors.textPrimary }]}
                 value={formKey}
                 onChangeText={setFormKey}
                 placeholder={t('aiConfig.keyPlaceholder')}
-                placeholderTextColor="#bbb"
+                placeholderTextColor={colors.textMuted}
                 secureTextEntry={!keyVisible}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
               <TouchableOpacity style={styles.eyeBtn} onPress={() => setKeyVisible(!keyVisible)}>
-                <Ionicons name={keyVisible ? 'eye-off' : 'eye'} size={20} color="#999" />
+                <Ionicons name={keyVisible ? 'eye-off' : 'eye'} size={20} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
             <View style={styles.formActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={resetForm}>
-                <Text style={styles.cancelBtnText}>{t('aiConfig.cancel')}</Text>
+              <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={resetForm}>
+                <Text style={[styles.cancelBtnText, { color: colors.textSecondary }]}>{t('aiConfig.cancel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }]} onPress={handleSave}>
                 <Text style={styles.saveBtnText}>{editingId ? t('aiConfig.updateBtn') : t('aiConfig.saveBtn')}</Text>
               </TouchableOpacity>
               {editingId ? (
                 <TouchableOpacity
-                  style={[styles.saveBtn, { backgroundColor: '#8b5cf6' }]}
+                  style={[styles.saveBtn, { backgroundColor: colors.accentPurple }]}
                   onPress={handleVerify}
                   disabled={verifying}
                 >
@@ -274,9 +275,9 @@ export default function AiConfigScreen({ onGoBack }) {
 
         {providers.length === 0 ? (
           <View style={styles.empty}>
-            <Ionicons name="sparkles" size={48} color="#ddd" />
-            <Text style={styles.emptyText}>{t('aiConfig.noProviders')}</Text>
-            <Text style={styles.emptySubtext}>{t('aiConfig.noProvidersSub')}</Text>
+            <Ionicons name="sparkles" size={48} color={colors.textMuted} />
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{t('aiConfig.noProviders')}</Text>
+            <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>{t('aiConfig.noProvidersSub')}</Text>
           </View>
         ) : (
           providers.map((p) => {
@@ -284,13 +285,13 @@ export default function AiConfigScreen({ onGoBack }) {
             return (
               <TouchableOpacity
                 key={p.id}
-                style={[styles.providerItem, isEditing && styles.providerItemActive]}
+                style={[styles.providerItem, { backgroundColor: colors.surface }, isEditing && { borderColor: colors.primary }]}
                 onPress={() => openEditForm(p)}
                 activeOpacity={0.7}
               >
                 <View style={styles.providerLeft}>
                   <TouchableOpacity
-                    style={[styles.radio, p.active && styles.radioActive]}
+                    style={[styles.radio, { borderColor: colors.primary }, p.active && { backgroundColor: colors.primary }]}
                     onPress={() => handleSetActive(p.id)}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
@@ -298,19 +299,19 @@ export default function AiConfigScreen({ onGoBack }) {
                   </TouchableOpacity>
                   <View style={styles.providerInfo}>
                     <View style={styles.providerNameRow}>
-                      <Text style={styles.providerName}>{p.name}</Text>
+                      <Text style={[styles.providerName, { color: colors.textPrimary }]}>{p.name}</Text>
                       {p.active ? (
-                        <View style={styles.activeBadge}>
-                          <Text style={styles.activeBadgeText}>{t('aiConfig.activeBadge')}</Text>
+                        <View style={[styles.activeBadge, { backgroundColor: colors.accent + '20' }]}>
+                          <Text style={[styles.activeBadgeText, { color: colors.accent }]}>{t('aiConfig.activeBadge')}</Text>
                         </View>
                       ) : null}
                     </View>
-                    <Text style={styles.providerDetail} numberOfLines={1}>{p.model}</Text>
-                    <Text style={styles.providerDetail} numberOfLines={1}>{p.endpoint}</Text>
+                    <Text style={[styles.providerDetail, { color: colors.textSecondary }]} numberOfLines={1}>{p.model}</Text>
+                    <Text style={[styles.providerDetail, { color: colors.textMuted }]} numberOfLines={1}>{p.endpoint}</Text>
                   </View>
                 </View>
                 <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(p.id)}>
-                  <Ionicons name="trash-outline" size={18} color="#d73a4a" />
+                  <Ionicons name="trash-outline" size={18} color={colors.accentRed} />
                 </TouchableOpacity>
               </TouchableOpacity>
             );
@@ -324,7 +325,7 @@ export default function AiConfigScreen({ onGoBack }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: '#f0f4f8' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',

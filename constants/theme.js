@@ -1,4 +1,4 @@
-export const colors = {
+export const lightColors = {
     primary: '#0366d6',
     primaryLight: '#58a6ff',
     primaryDark: '#024ea4',
@@ -25,6 +25,33 @@ export const colors = {
     overlay: 'rgba(15, 23, 42, 0.5)',
 };
 
+export const darkColors = {
+    primary: '#58a6ff',
+    primaryLight: '#79c0ff',
+    primaryDark: '#0366d6',
+
+    accent: '#22c55e',
+    accentRed: '#f87171',
+    accentPurple: '#a78bfa',
+    accentAmber: '#fbbf24',
+
+    background: '#0d1117',
+    surface: '#161b22',
+    surfaceHover: '#1c2333',
+
+    categoryTab: '#21262d',
+    categoryTabActive: '#58a6ff',
+
+    textPrimary: '#e6edf3',
+    textSecondary: '#8b949e',
+    textMuted: '#6e7681',
+
+    border: '#30363d',
+    borderLight: '#21262d',
+
+    overlay: 'rgba(0, 0, 0, 0.6)',
+};
+
 export const spacing = {
     xs: 4,
     sm: 8,
@@ -43,7 +70,7 @@ export const borderRadius = {
     full: 999,
 };
 
-export const shadows = {
+export const lightShadows = {
     sm: {
         shadowColor: '#0f172a',
         shadowOffset: { width: 0, height: 1 },
@@ -67,14 +94,63 @@ export const shadows = {
     },
 };
 
-export const typography = {
-    h1: { fontSize: 24, fontWeight: '700', color: colors.textPrimary },
-    h2: { fontSize: 20, fontWeight: '700', color: colors.textPrimary },
-    h3: { fontSize: 17, fontWeight: '600', color: colors.textPrimary },
-    body: { fontSize: 15, color: colors.textPrimary },
-    bodySmall: { fontSize: 13, color: colors.textSecondary },
-    caption: { fontSize: 12, color: colors.textMuted },
-    badge: { fontSize: 10, fontWeight: '600', letterSpacing: 0.3 },
+export const darkShadows = {
+    sm: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.3,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    md: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.4,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    lg: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+        elevation: 5,
+    },
 };
+
+export const lightTheme = {
+    colors: lightColors,
+    spacing,
+    borderRadius,
+    shadows: lightShadows,
+    typography: {
+        h1: { fontSize: 24, fontWeight: '700', color: lightColors.textPrimary },
+        h2: { fontSize: 20, fontWeight: '700', color: lightColors.textPrimary },
+        h3: { fontSize: 17, fontWeight: '600', color: lightColors.textPrimary },
+        body: { fontSize: 15, color: lightColors.textPrimary },
+        bodySmall: { fontSize: 13, color: lightColors.textSecondary },
+        caption: { fontSize: 12, color: lightColors.textMuted },
+        badge: { fontSize: 10, fontWeight: '600', letterSpacing: 0.3 },
+    },
+};
+
+export const darkTheme = {
+    colors: darkColors,
+    spacing,
+    borderRadius,
+    shadows: darkShadows,
+    typography: {
+        h1: { fontSize: 24, fontWeight: '700', color: darkColors.textPrimary },
+        h2: { fontSize: 20, fontWeight: '700', color: darkColors.textPrimary },
+        h3: { fontSize: 17, fontWeight: '600', color: darkColors.textPrimary },
+        body: { fontSize: 15, color: darkColors.textPrimary },
+        bodySmall: { fontSize: 13, color: darkColors.textSecondary },
+        caption: { fontSize: 12, color: darkColors.textMuted },
+        badge: { fontSize: 10, fontWeight: '600', letterSpacing: 0.3 },
+    },
+};
+
+export const colors = lightColors;
+export const shadows = lightShadows;
 
 export const hitSlop = { top: 8, bottom: 8, left: 8, right: 8 };

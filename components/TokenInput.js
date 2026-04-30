@@ -8,18 +8,17 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { setGitHubToken } from '../services/database';
 import { fetchStarredRepos } from '../services/github';
-import { colors } from '../constants/theme';
+import { useTheme } from '../constants/ThemeContext';
 import { useTranslation } from '../i18n';
 
-// Token 输入页：输入/验证 GitHub Personal Access Token
 export default function TokenInput({ onTokenSaved, onBack }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const [token, setToken] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [visible, setVisible] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
-  // Android 硬件返回按钮
   useEffect(() => {
     const onBackPress = () => {
       if (onBack) {
@@ -36,7 +35,6 @@ export default function TokenInput({ onTokenSaved, onBack }) {
     return () => subscription.remove();
   }, [onBack]);
 
-  // 验证 Token：调用 GitHub API 确认有效后再保存
   const handleVerify = async () => {
     const trimmed = token.trim();
     if (!trimmed) {
@@ -57,35 +55,35 @@ export default function TokenInput({ onTokenSaved, onBack }) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StatusBar style="dark" />
       {onBack ? (
-        <View style={styles.topBar}>
+        <View style={[styles.topBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
           <TouchableOpacity style={styles.topBarBack} onPress={onBack}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.topBarTitle}>{t('tokenInput.title')}</Text>
+          <Text style={[styles.topBarTitle, { color: colors.textPrimary }]}>{t('tokenInput.title')}</Text>
           <View style={styles.topBarBack} />
         </View>
       ) : null}
       <View style={styles.content}>
-        <View style={styles.iconWrap}>
-          <Ionicons name="logo-github" size={64} color="#0366d6" />
+        <View style={[styles.iconWrap, { backgroundColor: colors.primary + '15' }]}>
+          <Ionicons name="logo-github" size={64} color={colors.primary} />
         </View>
-        <Text style={styles.title}>GitHub Stars</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>GitHub Stars</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
           {t('tokenInput.subtitle')}
         </Text>
 
-        <View style={styles.inputWrap}>
+        <View style={[styles.inputWrap, { borderColor: colors.border }]}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.textPrimary }]}
             value={token}
             onChangeText={setToken}
             placeholder={t('tokenInput.placeholder')}
-            placeholderTextColor="#bbb"
+            placeholderTextColor={colors.textMuted}
             secureTextEntry={!visible}
             autoCapitalize="none"
             autoCorrect={false}
@@ -97,13 +95,13 @@ export default function TokenInput({ onTokenSaved, onBack }) {
             <Ionicons
               name={visible ? 'eye-off' : 'eye'}
               size={20}
-              color="#999"
+              color={colors.textMuted}
             />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={[styles.verifyBtn, (!token.trim() || verifying) && styles.verifyBtnDisabled]}
+          style={[styles.verifyBtn, { backgroundColor: colors.primary }, (!token.trim() || verifying) && { opacity: 0.6 }]}
           onPress={handleVerify}
           disabled={!token.trim() || verifying}
         >
@@ -121,27 +119,27 @@ export default function TokenInput({ onTokenSaved, onBack }) {
           style={styles.helpBtn}
           onPress={() => setShowHelp(!showHelp)}
         >
-          <Ionicons name="help-circle-outline" size={16} color="#0366d6" />
-          <Text style={styles.helpBtnText}>{t('tokenInput.helpTitle')}</Text>
+          <Ionicons name="help-circle-outline" size={16} color={colors.primary} />
+          <Text style={[styles.helpBtnText, { color: colors.primary }]}>{t('tokenInput.helpTitle')}</Text>
           <Ionicons
             name={showHelp ? 'chevron-up' : 'chevron-down'}
             size={16}
-            color="#0366d6"
+            color={colors.primary}
           />
         </TouchableOpacity>
 
         {showHelp ? (
-          <View style={styles.helpPanel}>
-            <Text style={styles.helpStep}>{t('tokenInput.step1')}</Text>
-            <Text style={styles.helpStep}>{t('tokenInput.step2')}</Text>
-            <Text style={styles.helpStep}>{t('tokenInput.step3')}</Text>
-            <Text style={styles.helpStep}>{t('tokenInput.step4')}</Text>
+          <View style={[styles.helpPanel, { backgroundColor: colors.surfaceHover, borderColor: colors.border }]}>
+            <Text style={[styles.helpStep, { color: colors.textSecondary }]}>{t('tokenInput.step1')}</Text>
+            <Text style={[styles.helpStep, { color: colors.textSecondary }]}>{t('tokenInput.step2')}</Text>
+            <Text style={[styles.helpStep, { color: colors.textSecondary }]}>{t('tokenInput.step3')}</Text>
+            <Text style={[styles.helpStep, { color: colors.textSecondary }]}>{t('tokenInput.step4')}</Text>
             <TouchableOpacity
               style={styles.helpLink}
               onPress={() => Linking.openURL('https://github.com/settings/tokens')}
             >
-              <Ionicons name="open-outline" size={14} color="#0366d6" />
-              <Text style={styles.helpLinkText}>{t('tokenInput.gotoGithub')}</Text>
+              <Ionicons name="open-outline" size={14} color={colors.primary} />
+              <Text style={[styles.helpLinkText, { color: colors.primary }]}>{t('tokenInput.gotoGithub')}</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -153,7 +151,6 @@ export default function TokenInput({ onTokenSaved, onBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   topBar: {
     flexDirection: 'row',
@@ -162,9 +159,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 10,
     paddingHorizontal: 16,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
   },
   topBarBack: {
     width: 40,
@@ -175,7 +170,6 @@ const styles = StyleSheet.create({
   topBarTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#1a1a1a',
   },
   content: {
     flex: 1,
@@ -187,56 +181,46 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#f0f7ff',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
   },
   title: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 10,
+    marginTop: 20,
   },
   subtitle: {
     fontSize: 14,
-    color: '#888',
     textAlign: 'center',
+    marginTop: 10,
     lineHeight: 20,
-    marginBottom: 28,
-    paddingHorizontal: 10,
   },
   inputWrap: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    marginBottom: 16,
+    borderRadius: 10,
+    marginTop: 24,
+    paddingHorizontal: 14,
   },
   input: {
     flex: 1,
-    padding: 14,
-    fontSize: 14,
-    color: '#333',
+    fontSize: 15,
+    paddingVertical: 14,
   },
   eyeBtn: {
-    padding: 14,
+    padding: 8,
   },
   verifyBtn: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0366d6',
-    padding: 16,
-    borderRadius: 12,
-    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginTop: 14,
     gap: 8,
-  },
-  verifyBtnDisabled: {
-    backgroundColor: '#99c9ff',
   },
   verifyBtnText: {
     color: '#fff',
@@ -246,44 +230,32 @@ const styles = StyleSheet.create({
   helpBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    gap: 4,
+    marginTop: 24,
+    gap: 6,
   },
   helpBtnText: {
-    fontSize: 13,
-    color: '#0366d6',
+    fontSize: 14,
   },
   helpPanel: {
     width: '100%',
-    backgroundColor: '#f0f7ff',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#d0e3ff',
+    padding: 16,
+    marginTop: 14,
+    gap: 10,
   },
   helpStep: {
     fontSize: 13,
-    color: '#444',
     lineHeight: 20,
-    marginBottom: 8,
-    paddingLeft: 4,
   },
   helpLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 8,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#0366d6',
-    gap: 6,
+    gap: 4,
+    marginTop: 4,
   },
   helpLinkText: {
     fontSize: 13,
-    color: '#0366d6',
     fontWeight: '500',
   },
 });
