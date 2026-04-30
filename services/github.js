@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { st } from '../i18n';
 
 const GITHUB_API_URL = 'https://api.github.com';
 // 用于检查更新的仓库地址，从 app.json extra 中读取
@@ -27,7 +28,7 @@ function buildHeaders(token) {
 // 分页获取用户所有星标仓库（每页 100 条，自动翻页直到取完）
 export async function fetchStarredRepos(token) {
   if (!token) {
-    throw new TokenExpiredError('请先输入 GitHub Token');
+    throw new TokenExpiredError(st('github.tokenRequired'));
   }
 
   let allRepos = [];
@@ -44,11 +45,11 @@ export async function fetchStarredRepos(token) {
     );
 
     if (response.status === 401) {
-      throw new TokenExpiredError('GitHub Token 已过期或无效，请重新输入');
+      throw new TokenExpiredError(st('github.tokenInvalid'));
     }
 
     if (!response.ok) {
-      throw new Error(`GitHub API 错误！状态码: ${response.status}`);
+      throw new Error(st('github.apiError', { code: response.status }));
     }
 
     const data = await response.json();
@@ -66,7 +67,7 @@ export async function fetchStarredRepos(token) {
 // 获取仓库的 README 原始内容（raw 格式直接返回 markdown 文本）
 export async function fetchReadme(token, fullName) {
   if (!token) {
-    throw new TokenExpiredError('请先输入 GitHub Token');
+    throw new TokenExpiredError(st('github.tokenRequired'));
   }
 
   const response = await fetch(
@@ -81,7 +82,7 @@ export async function fetchReadme(token, fullName) {
   );
 
   if (response.status === 401) {
-    throw new TokenExpiredError('GitHub Token 已过期或无效，请重新输入');
+    throw new TokenExpiredError(st('github.tokenInvalid'));
   }
 
   if (response.status === 404) {
@@ -89,7 +90,7 @@ export async function fetchReadme(token, fullName) {
   }
 
   if (!response.ok) {
-    throw new Error(`获取 README 失败！状态码: ${response.status}`);
+    throw new Error(st('github.readmeFailed', { code: response.status }));
   }
 
   return await response.text();
@@ -114,11 +115,11 @@ export async function checkUpdate(token) {
     );
 
     if (response.status === 404) {
-      return { hasUpdate: false, error: null, message: '未找到发布版本' };
+      return { hasUpdate: false, error: null, message: st('github.noRelease') };
     }
 
     if (!response.ok) {
-      return { hasUpdate: false, error: '检查更新失败', message: null };
+      return { hasUpdate: false, error: st('github.checkFailed'), message: null };
     }
 
     const data = await response.json();
@@ -145,10 +146,10 @@ export async function checkUpdate(token) {
       publishedAt: data.published_at,
       error: null,
       message: hasUpdate
-        ? `发现新版本 v${latestVersion}`
-        : '已是最新版本',
+        ? st('github.newVersion', { version: latestVersion })
+        : st('github.upToDate'),
     };
   } catch (e) {
-    return { hasUpdate: false, error: e.message || '网络错误', message: null };
+    return { hasUpdate: false, error: e.message || st('github.networkError'), message: null };
   }
 }

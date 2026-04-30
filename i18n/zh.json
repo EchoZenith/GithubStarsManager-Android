@@ -173,5 +173,22 @@
         "search": "搜索",
         "confirm": "确定",
         "cancel": "取消"
+    },
+    "github": {
+        "tokenRequired": "请先输入 GitHub Token",
+        "tokenInvalid": "GitHub Token 已过期或无效，请重新输入",
+        "apiError": "GitHub API 错误！状态码: {{code}}",
+        "readmeFailed": "获取 README 失败！状态码: {{code}}",
+        "noRelease": "未找到发布版本",
+        "checkFailed": "检查更新失败",
+        "newVersion": "发现新版本 v{{version}}",
+        "upToDate": "已是最新版本",
+        "networkError": "网络错误"
+    },
+    "ai": {
+        "noConfig": "请先在设置中配置 AI API Key",
+        "keyInvalid": "API Key 无效",
+        "modelUnavailable": "模型或 Endpoint 不可用",
+        "connectionFailed": "连接失败 ({{code}})"
     }
 }

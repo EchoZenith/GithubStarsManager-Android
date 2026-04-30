@@ -173,5 +173,22 @@
     "search": "Search",
     "confirm": "OK",
     "cancel": "Cancel"
+  },
+  "github": {
+    "tokenRequired": "Please enter a GitHub Token",
+    "tokenInvalid": "GitHub Token has expired or is invalid, please re-enter",
+    "apiError": "GitHub API error! Status code: {{code}}",
+    "readmeFailed": "Failed to fetch README! Status code: {{code}}",
+    "noRelease": "No release version found",
+    "checkFailed": "Update check failed",
+    "newVersion": "New version v{{version}} available",
+    "upToDate": "Up to date",
+    "networkError": "Network error"
+  },
+  "ai": {
+    "noConfig": "Please configure AI API Key in Settings first",
+    "keyInvalid": "API Key is invalid",
+    "modelUnavailable": "Model or Endpoint is not available",
+    "connectionFailed": "Connection failed ({{code}})"
   }
 }

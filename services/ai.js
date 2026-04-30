@@ -1,4 +1,5 @@
 import { getActiveAiConfig, migrateOldAiConfig } from './database';
+import { st } from '../i18n';
 
 function extractJson(text) {
     if (!text) return null;
@@ -41,7 +42,7 @@ export async function analyzeRepository(repo, readmeContent) {
     await migrateOldAiConfig();
     const config = await getActiveAiConfig();
     if (!config?.apiKey) {
-        throw new Error('请先在设置中配置 AI API Key');
+        throw new Error(st('ai.noConfig'));
     }
 
     const endpoint = (config.endpoint || 'https://api.openai.com/v1').replace(/\/+$/, '');
@@ -142,9 +143,9 @@ export async function verifyAiConfig(apiKey, endpoint, model) {
 
     if (!response.ok) {
         const errBody = await response.text().catch(() => '');
-        if (response.status === 401) throw new Error('API Key 无效');
-        if (response.status === 404) throw new Error('模型或 Endpoint 不可用');
-        throw new Error(`连接失败 (${response.status})`);
+        if (response.status === 401) throw new Error(st('ai.keyInvalid'));
+        if (response.status === 404) throw new Error(st('ai.modelUnavailable'));
+        throw new Error(st('ai.connectionFailed', { code: response.status }));
     }
 
     return true;

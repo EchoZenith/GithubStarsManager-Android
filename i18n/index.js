@@ -5,6 +5,37 @@ import en from './en.json';
 
 const locales = { zh, en };
 
+let currentLang = 'zh';
+
+export function setCurrentLang(lang) {
+  currentLang = lang === 'en' ? 'en' : 'zh';
+}
+
+export function getCurrentLang() {
+  return currentLang;
+}
+
+function resolveValue(locale, key, params) {
+  const keys = key.split('.');
+  let val = locale;
+  for (const k of keys) {
+    if (val && typeof val === 'object' && k in val) {
+      val = val[k];
+    } else {
+      return key;
+    }
+  }
+  if (typeof val !== 'string') return key;
+  if (params) {
+    return val.replace(/\{\{(\w+)\}\}/g, (_, p) => params[p] !== undefined ? String(params[p]) : `{{${p}}}`);
+  }
+  return val;
+}
+
+export function st(key, params) {
+  return resolveValue(locales[currentLang], key, params);
+}
+
 const I18nContext = createContext(null);
 
 export function I18nProvider({ children }) {
@@ -17,6 +48,7 @@ export function I18nProvider({ children }) {
       if (saved === 'en' || saved === 'zh') {
         setLang(saved);
         setLocale(locales[saved]);
+        setCurrentLang(saved);
       }
     })();
   }, []);
@@ -24,24 +56,12 @@ export function I18nProvider({ children }) {
   const changeLang = useCallback(async (newLang) => {
     setLang(newLang);
     setLocale(locales[newLang]);
+    setCurrentLang(newLang);
     await setSetting('language', newLang);
   }, []);
 
   const t = useCallback((key, params) => {
-    const keys = key.split('.');
-    let val = locale;
-    for (const k of keys) {
-      if (val && typeof val === 'object' && k in val) {
-        val = val[k];
-      } else {
-        return key;
-      }
-    }
-    if (typeof val !== 'string') return key;
-    if (params) {
-      return val.replace(/\{\{(\w+)\}\}/g, (_, p) => params[p] !== undefined ? String(params[p]) : `{{${p}}}`);
-    }
-    return val;
+    return resolveValue(locale, key, params);
   }, [locale]);
 
   return (
@@ -53,6 +73,6 @@ export function I18nProvider({ children }) {
 
 export function useTranslation() {
   const ctx = useContext(I18nContext);
-  if (!ctx) return { t: (k) => k, lang: 'zh', setLang: () => { } };
+  if (!ctx) return { t: (k) => k, lang: 'zh', setLang: () => {} };
   return ctx;
 }
