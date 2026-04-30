@@ -10,7 +10,7 @@ import {
   getUncategorizedRepos, batchSetRepoCategories, getRepoCountByCategory
 } from '../services/database';
 import { runAutoCategorize } from '../services/categorizer';
-import { colors, spacing, borderRadius, shadows } from '../constants/theme';
+import { useTheme } from '../constants/ThemeContext';
 import { useTranslation } from '../i18n';
 
 // 可选的颜色列表（给分类标签选择用）
@@ -19,6 +19,7 @@ const CAT_COLORS = ['#0366d6', '#28a745', '#d73a4a', '#6f42c1', '#e36209', '#19b
 // 分类管理页：查看/新增/编辑/删除分类
 export default function CategoryManageScreen({ onGoBack }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -122,42 +123,42 @@ export default function CategoryManageScreen({ onGoBack }) {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0366d6" />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={colors.background === '#0d1117' ? 'light' : 'dark'} />
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.headerBtn} onPress={onGoBack}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('categoryManage.title')}</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('categoryManage.title')}</Text>
         <TouchableOpacity style={styles.headerBtn} onPress={openAddForm}>
-          <Ionicons name="add" size={26} color="#0366d6" />
+          <Ionicons name="add" size={26} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scroll}>
+      <ScrollView style={[styles.scroll, { backgroundColor: colors.background }]}>
 
         {showForm ? (
-          <View style={styles.formCard}>
-            <Text style={styles.formTitle}>
+          <View style={[styles.formCard, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.formTitle, { color: colors.textPrimary }]}>
               {editingCat ? t('categoryManage.editCategory') : t('categoryManage.newCategory')}
             </Text>
-            <Text style={styles.fieldLabel}>{t('categoryManage.nameLabel')}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t('categoryManage.nameLabel')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
               value={formName}
               onChangeText={setFormName}
               placeholder={t('categoryManage.inputPlaceholder')}
-              placeholderTextColor="#bbb"
+              placeholderTextColor={colors.textMuted}
               autoFocus
             />
-            <Text style={styles.fieldLabel}>{t('categoryManage.colorLabel')}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{t('categoryManage.colorLabel')}</Text>
             <View style={styles.colorPicker}>
               {CAT_COLORS.map((color) => (
                 <TouchableOpacity
@@ -166,16 +167,16 @@ export default function CategoryManageScreen({ onGoBack }) {
                   style={[
                     styles.colorOption,
                     { backgroundColor: color },
-                    formColor === color && styles.colorOptionSelected,
+                    formColor === color && { borderColor: colors.textPrimary },
                   ]}
                 />
               ))}
             </View>
             <View style={styles.formActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={closeForm}>
-                <Text style={styles.cancelBtnText}>{t('app.cancel')}</Text>
+              <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={closeForm}>
+                <Text style={[styles.cancelBtnText, { color: colors.textSecondary }]}>{t('app.cancel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }]} onPress={handleSave}>
                 <Text style={styles.saveBtnText}>
                   {editingCat ? t('app.update') : t('categoryManage.saveBtn')}
                 </Text>
@@ -185,12 +186,12 @@ export default function CategoryManageScreen({ onGoBack }) {
         ) : null}
 
         {categories.map((cat) => (
-          <View key={cat.id} style={styles.catItem}>
+          <View key={cat.id} style={[styles.catItem, { backgroundColor: colors.surface }]}>
             <View style={styles.catItemLeft}>
               <View style={[styles.catDot, { backgroundColor: cat.color }]} />
               <View style={styles.catItemInfo}>
-                <Text style={styles.catItemName}>{cat.name}</Text>
-                <Text style={styles.catItemCount}>
+                <Text style={[styles.catItemName, { color: colors.textPrimary }]}>{cat.name}</Text>
+                <Text style={[styles.catItemCount, { color: colors.textMuted }]}>
                   {t('categoryManage.repoCount', { count: stats[cat.id] || 0 })}
                 </Text>
               </View>
@@ -200,13 +201,13 @@ export default function CategoryManageScreen({ onGoBack }) {
                 style={styles.catActionBtn}
                 onPress={() => openEditForm(cat)}
               >
-                <Ionicons name="pencil" size={18} color="#0366d6" />
+                <Ionicons name="pencil" size={18} color={colors.primary} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.catActionBtn}
                 onPress={() => handleDelete(cat)}
               >
-                <Ionicons name="trash" size={18} color="#d73a4a" />
+                <Ionicons name="trash" size={18} color={colors.accentRed} />
               </TouchableOpacity>
             </View>
           </View>
@@ -219,165 +220,33 @@ export default function CategoryManageScreen({ onGoBack }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'ios' ? 50 : 40,
-    paddingBottom: 10,
-    paddingHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingTop: Platform.OS === 'ios' ? 50 : 40, paddingBottom: 10,
+    paddingHorizontal: 8, borderBottomWidth: 1,
   },
-  headerBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  scroll: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-  formCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  formTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 12,
-  },
-  fieldLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 6,
-    marginTop: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 15,
-    color: '#333',
-    backgroundColor: '#fafafa',
-  },
-  colorPicker: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 8,
-    flexWrap: 'wrap',
-  },
-  colorOption: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 3,
-    borderColor: 'transparent',
-  },
-  colorOptionSelected: {
-    borderColor: '#333',
-  },
-  formActions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 12,
-  },
-  cancelBtn: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  cancelBtnText: {
-    fontSize: 15,
-    color: '#666',
-    fontWeight: '500',
-  },
-  saveBtn: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    backgroundColor: '#0366d6',
-  },
-  saveBtnText: {
-    fontSize: 15,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  catItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 8,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  catItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  catDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    marginRight: 12,
-  },
-  catItemInfo: {
-    flex: 1,
-  },
-  catItemName: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#333',
-  },
-  catItemCount: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 2,
-  },
-  catItemActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  catActionBtn: {
-    padding: 6,
-  },
-
+  headerBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: '600' },
+  scroll: { flex: 1, paddingHorizontal: 16, paddingTop: 12 },
+  formCard: { borderRadius: 12, padding: 16, marginBottom: 12 },
+  formTitle: { fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  fieldLabel: { fontSize: 13, fontWeight: '600', marginBottom: 6, marginTop: 8 },
+  input: { borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 15 },
+  colorPicker: { flexDirection: 'row', gap: 10, marginBottom: 8, flexWrap: 'wrap' },
+  colorOption: { width: 36, height: 36, borderRadius: 18, borderWidth: 3, borderColor: 'transparent' },
+  formActions: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  cancelBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center', borderWidth: 1 },
+  cancelBtnText: { fontSize: 15, fontWeight: '500' },
+  saveBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center' },
+  saveBtnText: { fontSize: 15, color: '#fff', fontWeight: '600' },
+  catItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderRadius: 12, padding: 14, marginBottom: 8 },
+  catItemLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  catDot: { width: 14, height: 14, borderRadius: 7, marginRight: 12 },
+  catItemInfo: { flex: 1 },
+  catItemName: { fontSize: 15, fontWeight: '500' },
+  catItemCount: { fontSize: 12, marginTop: 2 },
+  catItemActions: { flexDirection: 'row', gap: 8 },
+  catActionBtn: { padding: 6 },
 });

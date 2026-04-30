@@ -1,10 +1,10 @@
 import { useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Image, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, shadows, typography } from '../constants/theme';
+import { useTheme } from '../constants/ThemeContext';
 import { useTranslation } from '../i18n';
 
-function RepoItemContent({ item, showCategory }) {
+function RepoItemContent({ item, showCategory, colors, spacing, borderRadius }) {
   const { t } = useTranslation();
   const categories = item.categories || [];
 
@@ -58,6 +58,9 @@ function RepoItemContent({ item, showCategory }) {
 }
 
 export default function RepoItem({ item, onPress, onLongPress, showCategory }) {
+  const { colors, spacing, borderRadius } = useTheme();
+  const { t } = useTranslation();
+  const categories = item.categories || [];
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -77,7 +80,51 @@ export default function RepoItem({ item, onPress, onLongPress, showCategory }) {
       onPressOut={handlePressOut}
     >
       <Animated.View style={[styles.wrapper, { transform: [{ scale: scaleAnim }] }]}>
-        <RepoItemContent item={item} showCategory={showCategory} />
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <View style={[styles.header, { marginBottom: 8 }]}>
+            {item.owner_avatar_url ? (
+              <Image source={{ uri: item.owner_avatar_url }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatarPlaceholder, { backgroundColor: colors.borderLight }]}>
+                <Ionicons name="person" size={14} color={colors.textMuted} />
+              </View>
+            )}
+            <View style={styles.headerText}>
+              <Text style={[styles.repoName, { color: colors.primary }]} numberOfLines={1}>{item.full_name}</Text>
+              {item.language ? (
+                <View style={styles.langDot}>
+                  <View style={[styles.langDotInner, { backgroundColor: getLangColor(item.language) }]} />
+                  <Text style={[styles.language, { color: colors.textMuted }]}>{item.language}</Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+
+          <Text style={[styles.repoDesc, { color: colors.textSecondary }]} numberOfLines={2}>
+            {item.description || t('common.noDesc')}
+          </Text>
+
+          <View style={[styles.statsRow, { marginTop: 12, gap: 16 }]}>
+            <View style={styles.statItem}>
+              <Ionicons name="star" size={13} color={colors.accentAmber} />
+              <Text style={[styles.stat, { color: colors.textSecondary }]}>{formatCount(item.stargazers_count)}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Ionicons name="git-branch-outline" size={13} color={colors.textMuted} />
+              <Text style={[styles.stat, { color: colors.textSecondary }]}>{formatCount(item.forks_count)}</Text>
+            </View>
+          </View>
+
+          {showCategory && categories.length > 0 ? (
+            <View style={[styles.badgesRow, { borderTopColor: colors.borderLight, marginTop: 12, paddingTop: 12, gap: 6 }]}>
+              {categories.map((cat) => (
+                <View key={cat.id} style={[styles.categoryBadge, { backgroundColor: cat.color || colors.primary }]}>
+                  <Text style={styles.categoryBadgeText}>{cat.name}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
       </Animated.View>
     </TouchableOpacity>
   );
@@ -102,32 +149,31 @@ function formatCount(n) {
 
 const styles = StyleSheet.create({
   wrapper: {
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.xs,
+    marginHorizontal: 16,
+    marginVertical: 4,
   },
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    ...shadows.md,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 16,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: 8,
   },
   avatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    marginRight: spacing.md,
+    marginRight: 12,
   },
   avatarPlaceholder: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    marginRight: spacing.md,
-    backgroundColor: colors.borderLight,
+    marginRight: 12,
+    backgroundColor: '#f1f5f9',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -140,13 +186,13 @@ const styles = StyleSheet.create({
   repoName: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.primary,
+    color: '#0366d6',
     flex: 1,
   },
   langDot: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: spacing.sm,
+    marginLeft: 8,
   },
   langDotInner: {
     width: 8,
@@ -156,18 +202,18 @@ const styles = StyleSheet.create({
   },
   language: {
     fontSize: 12,
-    color: colors.textMuted,
+    color: '#94a3b8',
   },
   repoDesc: {
-    marginTop: spacing.xs,
-    color: colors.textSecondary,
+    marginTop: 4,
+    color: '#475569',
     fontSize: 13,
     lineHeight: 19,
   },
   statsRow: {
     flexDirection: 'row',
-    marginTop: spacing.md,
-    gap: spacing.lg,
+    marginTop: 12,
+    gap: 16,
   },
   statItem: {
     flexDirection: 'row',
@@ -176,21 +222,21 @@ const styles = StyleSheet.create({
   },
   stat: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: '#475569',
   },
   badgesRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
+    marginTop: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
+    borderTopColor: '#f1f5f9',
     gap: 6,
   },
   categoryBadge: {
     paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: borderRadius.full,
+    borderRadius: 999,
   },
   categoryBadgeText: {
     color: '#fff',

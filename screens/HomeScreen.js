@@ -16,14 +16,13 @@ import {
 } from '../services/database';
 import { runAutoCategorize } from '../services/categorizer';
 import { analyzeRepository } from '../services/ai';
-import { colors, spacing, borderRadius, shadows } from '../constants/theme';
+import { useTheme } from '../constants/ThemeContext';
 import { useTranslation } from '../i18n';
 
-// 首页：仓库列表、分类标签栏、同步入口
 export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoDetail }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const [categories, setCategories] = useState([]);
-  // selectedCategory: null=全部, 0=未分类, >0=具体分类 ID
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [repos, setRepos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +33,6 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
   const [aiProgress, setAiProgress] = useState({ current: 0, total: 0, label: '' });
   const cancelAiRef = useRef(false);
 
-  // 按分类加载仓库列表
   const loadRepos = useCallback(async (catId) => {
     if (catId === null || catId === undefined) {
       const allRepos = await getAllRepos();
@@ -48,7 +46,6 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
     }
   }, []);
 
-  // 加载所有数据：分类 + 仓库列表
   const loadData = useCallback(async () => {
     try {
       await initDatabase();
@@ -66,7 +63,6 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
     loadData();
   }, [loadData]);
 
-  // Android 硬件返回按钮退出应用
   useEffect(() => {
     const onBackPress = () => {
       Alert.alert(t('app.exitTitle'), t('app.exitMessage'), [
@@ -84,7 +80,6 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
     await loadRepos(catId);
   };
 
-  // 从 GitHub 同步星标仓库，保存到本地后执行自动分类
   const handleSync = async () => {
     const token = await getGitHubToken();
     if (!token) {
@@ -148,7 +143,6 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
       Alert.alert(t('app.confirm'), t('home.aiNoConfig'));
       return;
     }
-
     let targetRepos;
     if (mode === 'all') {
       targetRepos = await getAllRepos();
@@ -157,16 +151,13 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
     } else {
       targetRepos = await getFailedAnalysisRepos();
     }
-
     if (targetRepos.length === 0) {
       Alert.alert(t('app.confirm'), t('home.aiNoRepos'));
       return;
     }
-
     cancelAiRef.current = false;
     setAiAnalyzing(true);
     setAiProgress({ current: 0, total: targetRepos.length, label: t('home.aiPreparing') });
-
     let success = 0;
     let fail = 0;
     for (let i = 0; i < targetRepos.length; i++) {
@@ -178,8 +169,7 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
         let readmeContent = null;
         try {
           readmeContent = await fetchReadme(token, repo.full_name);
-        } catch {
-        }
+        } catch { }
         const result = await analyzeRepository(repo, readmeContent);
         await saveAiAnalysis(repo.repo_id, result.summary, result.tags, result.platforms);
         success++;
@@ -188,7 +178,6 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
         fail++;
       }
     }
-
     const wasCancelled = cancelAiRef.current;
     setAiAnalyzing(false);
     setAiProgress({ current: 0, total: 0, label: '' });
@@ -209,117 +198,82 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0366d6" />
-        <Text style={styles.loadingText}>{t('home.loadingData')}</Text>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textMuted }]}>{t('home.loadingData')}</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
-
-      <View style={styles.header}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={colors.background === '#0d1117' ? 'light' : 'dark'} />
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <View style={styles.headerTop}>
-          <Text style={styles.headerTitle}>{t('home.title')}</Text>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('home.title')}</Text>
           <View style={styles.headerActions}>
             <TouchableOpacity
-              style={styles.headerBtn}
+              style={[styles.headerBtn, { backgroundColor: colors.background }]}
               onPress={handleSync}
               disabled={syncing}
             >
-              <Ionicons
-                name={syncing ? 'sync' : 'cloud-download'}
-                size={22}
-                color="#0366d6"
-              />
+              <Ionicons name={syncing ? 'sync' : 'cloud-download'} size={22} color={colors.primary} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.headerBtn, { backgroundColor: aiAnalyzing ? '#fde8e8' : '#f5f0ff' }]}
+              style={[styles.headerBtn, { backgroundColor: aiAnalyzing ? colors.accentRed + '20' : colors.accentPurple + '15' }]}
               onPress={handleAiAnalyze}
             >
-              <Ionicons
-                name={aiAnalyzing ? 'close' : 'sparkles'}
-                size={22}
-                color={aiAnalyzing ? '#d73a4a' : '#8b5cf6'}
-              />
+              <Ionicons name={aiAnalyzing ? 'close' : 'sparkles'} size={22} color={aiAnalyzing ? colors.accentRed : colors.accentPurple} />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.headerBtn}
+              style={[styles.headerBtn, { backgroundColor: colors.background }]}
               onPress={onOpenSettings}
             >
-              <Ionicons name="settings-outline" size={22} color="#0366d6" />
+              <Ionicons name="settings-outline" size={22} color={colors.primary} />
             </TouchableOpacity>
           </View>
         </View>
         {syncInfo ? (
-          <Text style={styles.syncInfo}>{syncInfo}</Text>
+          <Text style={[styles.syncInfo, { color: colors.accent }]}>{syncInfo}</Text>
         ) : null}
       </View>
 
       {aiAnalyzing ? (
-        <View style={styles.aiProgressBar}>
-          <ActivityIndicator size="small" color="#8b5cf6" />
-          <Text style={styles.aiProgressText}>
+        <View style={[styles.aiProgressBar, { backgroundColor: colors.accentPurple + '12' }]}>
+          <ActivityIndicator size="small" color={colors.accentPurple} />
+          <Text style={[styles.aiProgressText, { color: colors.accentPurple }]}>
             {t('home.aiProgress', { current: aiProgress.current, total: aiProgress.total })}
           </Text>
-          <Text style={styles.aiProgressLabel} numberOfLines={1}>{aiProgress.label}</Text>
+          <Text style={[styles.aiProgressLabel, { color: colors.textMuted }]} numberOfLines={1}>{aiProgress.label}</Text>
         </View>
       ) : null}
 
-      <View style={styles.categoryTabs}>
+      <View style={[styles.categoryTabs, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <TouchableOpacity
-            style={[
-              styles.categoryTab,
-              selectedCategory === null && styles.categoryTabActive,
-            ]}
+            style={[styles.categoryTab, { backgroundColor: colors.categoryTab }, selectedCategory === null && { backgroundColor: colors.categoryTabActive }]}
             onPress={() => onSelectCategory(null)}
           >
-            <Text
-              style={[
-                styles.categoryTabText,
-                selectedCategory === null && styles.categoryTabTextActive,
-              ]}
-            >
+            <Text style={[{ color: colors.textSecondary, fontSize: 13, fontWeight: '500' }, selectedCategory === null && styles.categoryTabTextActive]}>
               {t('home.allTab')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.categoryTab,
-              selectedCategory === 0 && styles.categoryTabActive,
-            ]}
+            style={[styles.categoryTab, { backgroundColor: colors.categoryTab }, selectedCategory === 0 && { backgroundColor: colors.categoryTabActive }]}
             onPress={() => onSelectCategory(0)}
           >
-            <Text
-              style={[
-                styles.categoryTabText,
-                selectedCategory === 0 && styles.categoryTabTextActive,
-              ]}
-            >
+            <Text style={[{ color: colors.textSecondary, fontSize: 13, fontWeight: '500' }, selectedCategory === 0 && styles.categoryTabTextActive]}>
               {t('home.uncategorized')}
             </Text>
           </TouchableOpacity>
           {categories.map((cat) => (
             <TouchableOpacity
               key={cat.id}
-              style={[
-                styles.categoryTab,
-                selectedCategory === cat.id && styles.categoryTabActive,
-              ]}
+              style={[styles.categoryTab, { backgroundColor: colors.categoryTab }, selectedCategory === cat.id && { backgroundColor: colors.categoryTabActive }]}
               onPress={() => onSelectCategory(cat.id)}
             >
-              <View
-                style={[styles.categoryDot, { backgroundColor: cat.color }]}
-              />
-              <Text
-                style={[
-                  styles.categoryTabText,
-                  selectedCategory === cat.id && styles.categoryTabTextActive,
-                ]}
-              >
+              <View style={[styles.categoryDot, { backgroundColor: cat.color }]} />
+              <Text style={[{ color: colors.textSecondary, fontSize: 13, fontWeight: '500' }, selectedCategory === cat.id && styles.categoryTabTextActive]}>
                 {cat.name}
               </Text>
             </TouchableOpacity>
@@ -328,12 +282,12 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
       </View>
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{currentCategoryName}</Text>
-        <Text style={styles.sectionCount}>{t('home.count', { count: repos.length })}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{currentCategoryName}</Text>
+        <Text style={[styles.sectionCount, { color: colors.textMuted }]}>{t('home.count', { count: repos.length })}</Text>
       </View>
 
       {syncing ? (
-        <View style={styles.syncingBar}>
+        <View style={[styles.syncingBar, { backgroundColor: colors.primary }]}>
           <ActivityIndicator size="small" color="#fff" />
           <Text style={styles.syncingText}>{t('home.syncing')}</Text>
         </View>
@@ -350,16 +304,12 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
           />
         )}
         keyExtractor={(item) => String(item.id)}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="star-outline" size={48} color="#ccc" />
-            <Text style={styles.emptyText}>
-              {selectedCategory === 0
-                ? t('home.noUncategorized')
-                : t('home.noRepos')}
+            <Ionicons name="star-outline" size={48} color={colors.textMuted} />
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+              {selectedCategory === 0 ? t('home.noUncategorized') : t('home.noRepos')}
             </Text>
           </View>
         }
@@ -370,157 +320,33 @@ export default function HomeScreen({ onTokenExpired, onOpenSettings, onOpenRepoD
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  loadingText: {
-    marginTop: spacing.md,
-    color: colors.textMuted,
-    fontSize: 14,
-  },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, fontSize: 14 },
   header: {
-    backgroundColor: colors.surface,
-    paddingTop: Platform.OS === 'ios' ? 50 : spacing.xxxl,
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingTop: Platform.OS === 'ios' ? 50 : 32, paddingBottom: 12,
+    paddingHorizontal: 16, borderBottomWidth: 1,
   },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  headerBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  syncInfo: {
-    marginTop: spacing.sm,
-    fontSize: 12,
-    color: colors.accent,
-  },
-  categoryTabs: {
-    backgroundColor: colors.surface,
-    paddingVertical: spacing.md,
-    paddingLeft: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  categoryTab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    marginRight: spacing.sm,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.categoryTab,
-  },
-  categoryTabActive: {
-    backgroundColor: colors.categoryTabActive,
-  },
-  categoryTabText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  categoryTabTextActive: {
-    color: '#fff',
-  },
-  categoryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: spacing.xs,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  sectionCount: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  syncingBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.sm,
-    gap: spacing.sm,
-  },
-  syncingText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  aiProgressBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f0ff',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
-  aiProgressText: {
-    color: colors.accentPurple,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  aiProgressLabel: {
-    color: colors.accentPurple,
-    fontSize: 11,
-    flex: 1,
-    textAlign: 'right',
-  },
-  listContent: {
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.xxl,
-  },
-  emptyContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 80,
-  },
-  empty: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxxl,
-  },
-  emptyText: {
-    marginTop: spacing.lg,
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerTitle: { fontSize: 24, fontWeight: '700', letterSpacing: -0.5 },
+  headerActions: { flexDirection: 'row', gap: 8 },
+  headerBtn: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  syncInfo: { marginTop: 8, fontSize: 12 },
+  categoryTabs: { paddingVertical: 12, paddingLeft: 16, borderBottomWidth: 1 },
+  categoryTab: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, marginRight: 8, borderRadius: 999 },
+  categoryTabText: { fontSize: 13, color: '#fff', fontWeight: '500' },
+  categoryTabTextActive: { color: '#fff' },
+  categoryDot: { width: 8, height: 8, borderRadius: 4, marginRight: 4 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '600' },
+  sectionCount: { fontSize: 13 },
+  syncingBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, gap: 8 },
+  syncingText: { color: '#fff', fontSize: 13, fontWeight: '500' },
+  aiProgressBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 16, gap: 8 },
+  aiProgressText: { fontSize: 13, fontWeight: '500' },
+  aiProgressLabel: { fontSize: 12, flex: 1 },
+  listContent: { paddingBottom: 40 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
+  emptyText: { marginTop: 12, fontSize: 14, textAlign: 'center', lineHeight: 20 },
 });

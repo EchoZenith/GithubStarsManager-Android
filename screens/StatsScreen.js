@@ -9,16 +9,20 @@ import {
   getAllCategories, getTotalRepoCount,
   getRepoCountByCategory,
 } from '../services/database';
-import { colors } from '../constants/theme';
+import { useTheme } from '../constants/ThemeContext';
 import { useTranslation } from '../i18n';
 
 export default function StatsScreen({ onGoBack }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   const [stats, setStats] = useState({ repos: 0, categories: 0 });
   const [categoryStats, setCategoryStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const goBackRef = useRef(onGoBack);
-  goBackRef.current = onGoBack;
+
+  useEffect(() => {
+    goBackRef.current = onGoBack;
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -42,42 +46,42 @@ export default function StatsScreen({ onGoBack }) {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style="dark" />
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.backBtn} onPress={onGoBack}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('stats.title')}</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('stats.title')}</Text>
         <View style={styles.backBtn} />
       </View>
 
       <ScrollView style={styles.scroll}>
         <View style={styles.overviewRow}>
-          <View style={styles.overviewCard}>
+          <View style={[styles.overviewCard, { backgroundColor: colors.surface }]}>
             <Ionicons name="star" size={32} color="#f0ad4e" />
-            <Text style={styles.overviewNumber}>{stats.repos}</Text>
-            <Text style={styles.overviewLabel}>{t('stats.totalRepos')}</Text>
+            <Text style={[styles.overviewNumber, { color: colors.textPrimary }]}>{stats.repos}</Text>
+            <Text style={[styles.overviewLabel, { color: colors.textSecondary }]}>{t('stats.totalRepos')}</Text>
           </View>
-          <View style={styles.overviewCard}>
-            <Ionicons name="folder" size={32} color="#0366d6" />
-            <Text style={styles.overviewNumber}>{stats.categories}</Text>
-            <Text style={styles.overviewLabel}>{t('stats.categoriesLabel')}</Text>
+          <View style={[styles.overviewCard, { backgroundColor: colors.surface }]}>
+            <Ionicons name="folder" size={32} color={colors.primary} />
+            <Text style={[styles.overviewNumber, { color: colors.textPrimary }]}>{stats.categories}</Text>
+            <Text style={[styles.overviewLabel, { color: colors.textSecondary }]}>{t('stats.categoriesLabel')}</Text>
           </View>
         </View>
 
         <View style={styles.sectionHeader}>
-          <Ionicons name="bar-chart" size={16} color="#555" />
-          <Text style={styles.sectionHeaderText}>{t('stats.categoryDist')}</Text>
+          <Ionicons name="bar-chart" size={16} color={colors.textSecondary} />
+          <Text style={[styles.sectionHeaderText, { color: colors.textPrimary }]}>{t('stats.categoryDist')}</Text>
         </View>
 
         {categoryStats.map((cat) => (
-          <View key={cat.id} style={styles.catRow}>
+          <View key={cat.id} style={[styles.catRow, { backgroundColor: colors.surface, borderBottomColor: colors.borderLight }]}>
             <View style={styles.catLeft}>
               <View style={[styles.catDot, { backgroundColor: cat.color }]} />
-              <Text style={styles.catName}>{cat.name}</Text>
+              <Text style={[styles.catName, { color: colors.textPrimary }]}>{cat.name}</Text>
             </View>
-            <View style={styles.catBarWrap}>
+            <View style={[styles.catBarWrap, { backgroundColor: colors.borderLight }]}>
               <View
                 style={[
                   styles.catBar,
@@ -88,7 +92,7 @@ export default function StatsScreen({ onGoBack }) {
                 ]}
               />
             </View>
-            <Text style={styles.catCount}>{cat.repo_count}</Text>
+            <Text style={[styles.catCount, { color: colors.textSecondary }]}>{cat.repo_count}</Text>
           </View>
         ))}
 
@@ -101,18 +105,15 @@ export default function StatsScreen({ onGoBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
     paddingTop: Platform.OS === 'ios' ? 50 : 40,
     paddingBottom: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
   },
   backBtn: {
     width: 40,
@@ -121,90 +122,80 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#1a1a1a',
   },
   scroll: {
     flex: 1,
+    padding: 16,
   },
   overviewRow: {
     flexDirection: 'row',
     gap: 12,
-    padding: 16,
+    marginBottom: 24,
   },
   overviewCard: {
     flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 24,
     alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    padding: 20,
+    borderRadius: 12,
   },
   overviewNumber: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
-    color: '#1a1a1a',
-    marginTop: 10,
+    marginTop: 8,
   },
   overviewLabel: {
     fontSize: 13,
-    color: '#888',
     marginTop: 4,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
     gap: 6,
+    marginBottom: 12,
   },
   sectionHeaderText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#555',
   },
   catRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    marginBottom: 6,
+    borderBottomWidth: 1,
   },
   catLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: 80,
-    gap: 6,
+    width: 100,
   },
   catDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
+    marginRight: 8,
   },
   catName: {
     fontSize: 13,
-    color: '#333',
     fontWeight: '500',
   },
   catBarWrap: {
     flex: 1,
-    height: 8,
-    backgroundColor: '#eee',
-    borderRadius: 4,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 10,
     overflow: 'hidden',
   },
   catBar: {
-    height: 8,
-    borderRadius: 4,
+    height: '100%',
+    borderRadius: 3,
   },
   catCount: {
     fontSize: 13,
-    color: '#888',
     fontWeight: '600',
     width: 30,
     textAlign: 'right',

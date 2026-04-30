@@ -10,9 +10,11 @@ import CategoryManageScreen from './screens/CategoryManageScreen';
 import AiConfigScreen from './screens/AiConfigScreen';
 import StatsScreen from './screens/StatsScreen';
 import { I18nProvider, useTranslation } from './i18n';
+import { ThemeProvider, useTheme } from './constants/ThemeContext';
 
 function AppContent() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
   // 当前显示的页面：loading / token_input / home / settings / repo_detail / category_manage
   const [screen, setScreen] = useState('loading');
   const [selectedRepo, setSelectedRepo] = useState(null);
@@ -60,9 +62,9 @@ function AppContent() {
   // 根据 screen 状态渲染对应页面
   if (screen === 'loading') {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#0366d6" />
-        <Text style={styles.loadingText}>{t('app.loading')}</Text>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.loadingText, { color: colors.textMuted }]}>{t('app.loading')}</Text>
       </View>
     );
   }
@@ -144,8 +146,19 @@ function AppContent() {
 export default function App() {
   return (
     <I18nProvider>
-      <AppContent />
+      <ThemeProvider>
+        <AppRoot />
+      </ThemeProvider>
     </I18nProvider>
+  );
+}
+
+function AppRoot() {
+  const { colors } = useTheme();
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <AppContent />
+    </View>
   );
 }
 
@@ -154,11 +167,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
   },
   loadingText: {
     marginTop: 10,
-    color: '#888',
     fontSize: 14,
   },
 });

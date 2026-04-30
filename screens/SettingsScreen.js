@@ -14,11 +14,12 @@ import {
 } from '../services/database';
 import { fetchStarredRepos, checkUpdate } from '../services/github';
 import TokenInput from '../components/TokenInput';
-import { colors, spacing, borderRadius, shadows } from '../constants/theme';
+import { useTheme } from '../constants/ThemeContext';
 import { useTranslation } from '../i18n';
 
 export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfig, onOpenStats, onOpenCategoryManage }) {
   const { t, lang, setLang } = useTranslation();
+  const { colors, spacing, borderRadius, shadows, mode, toggleTheme } = useTheme();
   const [token, setToken] = useState(null);
   const [repoCount, setRepoCount] = useState(0);
   const [showTokenInput, setShowTokenInput] = useState(false);
@@ -136,30 +137,45 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
     : '';
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style="dark" />
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.backBtn} onPress={onGoBack}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('settings.title')}</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{t('settings.title')}</Text>
         <View style={styles.backBtn} />
       </View>
 
       <ScrollView style={styles.scroll}>
         <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('settings.theme')}</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <TouchableOpacity style={styles.langRow} onPress={() => toggleTheme('light')}>
+              <Text style={[styles.langText, { color: colors.textPrimary }, mode === 'light' && { color: colors.primary, fontWeight: '600' }]}>{t('settings.themeLight')}</Text>
+              {mode === 'light' ? <Ionicons name="checkmark" size={18} color={colors.primary} /> : null}
+            </TouchableOpacity>
+            <View style={styles.langDivider} />
+            <TouchableOpacity style={styles.langRow} onPress={() => toggleTheme('dark')}>
+              <Text style={[styles.langText, { color: colors.textPrimary }, mode === 'dark' && { color: colors.primary, fontWeight: '600' }]}>{t('settings.themeDark')}</Text>
+              {mode === 'dark' ? <Ionicons name="checkmark" size={18} color={colors.primary} /> : null}
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.githubAccount')}</Text>
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={styles.row}>
-              <Ionicons name="key" size={20} color="#0366d6" />
-              <Text style={styles.rowLabel}>{t('settings.accessToken')}</Text>
+              <Ionicons name="key" size={20} color={colors.primary} />
+              <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{t('settings.accessToken')}</Text>
             </View>
-            <Text style={styles.tokenText}>
+            <Text style={[styles.tokenText, { color: colors.textMuted }]}>
               {token ? maskedToken : t('settings.notSet')}
             </Text>
             <View style={styles.tokenActions}>
               <TouchableOpacity
-                style={styles.tokenBtn}
+                style={[styles.tokenBtn, { backgroundColor: colors.primary }]}
                 onPress={handleChangeToken}
               >
                 <Ionicons name="create" size={16} color="#fff" />
@@ -170,21 +186,21 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
               {token ? (
                 <>
                   <TouchableOpacity
-                    style={[styles.tokenBtn, styles.tokenBtnOutline]}
+                    style={[styles.tokenBtn, styles.tokenBtnOutline, { borderColor: colors.primary }]}
                     onPress={handleVerifyToken}
                     disabled={verifying}
                   >
                     {verifying ? (
-                      <ActivityIndicator size="small" color="#0366d6" />
+                      <ActivityIndicator size="small" color={colors.primary} />
                     ) : (
                       <>
-                        <Ionicons name="checkmark" size={16} color="#0366d6" />
-                        <Text style={[styles.tokenBtnText, styles.tokenBtnTextOutline]}>{t('settings.verify')}</Text>
+                        <Ionicons name="checkmark" size={16} color={colors.primary} />
+                        <Text style={[styles.tokenBtnText, styles.tokenBtnTextOutline, { color: colors.primary }]}>{t('settings.verify')}</Text>
                       </>
                     )}
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.tokenBtn, styles.tokenBtnDanger]}
+                    style={[styles.tokenBtn, { backgroundColor: colors.accentRed }]}
                     onPress={handleClearToken}
                   >
                     <Ionicons name="trash" size={16} color="#fff" />
@@ -197,90 +213,90 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity style={styles.card} onPress={onOpenStats} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.card, { backgroundColor: colors.surface }]} onPress={onOpenStats} activeOpacity={0.7}>
             <View style={styles.aboutRow}>
               <View style={styles.aboutLeft}>
-                <Ionicons name="stats-chart" size={20} color="#28a745" />
-                <Text style={styles.aboutLabel}>{t('settings.stats')}</Text>
+                <Ionicons name="stats-chart" size={20} color={colors.accent} />
+                <Text style={[styles.aboutLabel, { color: colors.textPrimary }]}>{t('settings.stats')}</Text>
               </View>
               <View style={styles.aboutRight}>
-                <Text style={styles.aboutValue}>{t('settings.statsCount', { count: repoCount })}</Text>
-                <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                <Text style={[styles.aboutValue, { color: colors.textMuted }]}>{t('settings.statsCount', { count: repoCount })}</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </View>
             </View>
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity style={styles.card} onPress={onOpenCategoryManage} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.card, { backgroundColor: colors.surface }]} onPress={onOpenCategoryManage} activeOpacity={0.7}>
             <View style={styles.aboutRow}>
               <View style={styles.aboutLeft}>
-                <Ionicons name="folder-open" size={20} color="#19b5a0" />
-                <Text style={styles.aboutLabel}>{t('settings.categoryManage')}</Text>
+                <Ionicons name="folder-open" size={20} color={colors.accent} />
+                <Text style={[styles.aboutLabel, { color: colors.textPrimary }]}>{t('settings.categoryManage')}</Text>
               </View>
               <View style={styles.aboutRight}>
-                <Text style={styles.aboutValue}>{t('settings.categoryCount', { count: categoryCount })}</Text>
-                <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                <Text style={[styles.aboutValue, { color: colors.textMuted }]}>{t('settings.categoryCount', { count: categoryCount })}</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </View>
             </View>
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <TouchableOpacity style={styles.card} onPress={onOpenAiConfig} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.card, { backgroundColor: colors.surface }]} onPress={onOpenAiConfig} activeOpacity={0.7}>
             <View style={styles.aboutRow}>
               <View style={styles.aboutLeft}>
-                <Ionicons name="sparkles" size={20} color="#8b5cf6" />
-                <Text style={styles.aboutLabel}>{t('settings.aiConfig')}</Text>
+                <Ionicons name="sparkles" size={20} color={colors.accentPurple} />
+                <Text style={[styles.aboutLabel, { color: colors.textPrimary }]}>{t('settings.aiConfig')}</Text>
               </View>
               <View style={styles.aboutRight}>
                 {aiProviders.length > 0 ? (
-                  <Text style={styles.aboutValue}>{t('settings.aiConfigCount', { count: aiProviders.length })}</Text>
+                  <Text style={[styles.aboutValue, { color: colors.textMuted }]}>{t('settings.aiConfigCount', { count: aiProviders.length })}</Text>
                 ) : null}
-                <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </View>
             </View>
           </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.language')}</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('settings.language')}</Text>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <TouchableOpacity style={styles.langRow} onPress={() => setLang('zh')}>
-              <Text style={[styles.langText, lang === 'zh' && styles.langTextActive]}>{t('settings.languageZh')}</Text>
+              <Text style={[styles.langText, { color: colors.textPrimary }, lang === 'zh' && { color: colors.primary, fontWeight: '600' }]}>{t('settings.languageZh')}</Text>
               {lang === 'zh' ? <Ionicons name="checkmark" size={18} color={colors.primary} /> : null}
             </TouchableOpacity>
             <View style={styles.langDivider} />
             <TouchableOpacity style={styles.langRow} onPress={() => setLang('en')}>
-              <Text style={[styles.langText, lang === 'en' && styles.langTextActive]}>{t('settings.languageEn')}</Text>
+              <Text style={[styles.langText, { color: colors.textPrimary }, lang === 'en' && { color: colors.primary, fontWeight: '600' }]}>{t('settings.languageEn')}</Text>
               {lang === 'en' ? <Ionicons name="checkmark" size={18} color={colors.primary} /> : null}
             </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.about')}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t('settings.about')}</Text>
           <TouchableOpacity
-            style={styles.card}
+            style={[styles.card, { backgroundColor: colors.surface }]}
             onPress={handleCheckUpdate}
             disabled={checkingUpdate}
             activeOpacity={0.7}
           >
             <View style={styles.aboutRow}>
               <View style={styles.aboutLeft}>
-                <Ionicons name="information-circle-outline" size={20} color="#555" />
-                <Text style={styles.aboutLabel}>{t('settings.version')}</Text>
+                <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
+                <Text style={[styles.aboutLabel, { color: colors.textPrimary }]}>{t('settings.version')}</Text>
               </View>
               <View style={styles.aboutRight}>
                 {checkingUpdate ? (
-                  <ActivityIndicator size="small" color="#0366d6" />
+                  <ActivityIndicator size="small" color={colors.primary} />
                 ) : updateInfo && updateInfo.hasUpdate ? (
                   <View style={styles.updateBadge}>
                     <Text style={styles.updateBadgeText}>{t('settings.updateAvailable')}</Text>
                   </View>
                 ) : null}
-                <Text style={styles.aboutValue}>{Constants.expoConfig?.version || '1.0.0'}</Text>
-                <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                <Text style={[styles.aboutValue, { color: colors.textMuted }]}>{Constants.expoConfig?.version || '1.0.0'}</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </View>
             </View>
           </TouchableOpacity>
@@ -295,18 +311,18 @@ export default function SettingsScreen({ onGoBack, onTokenExpired, onOpenAiConfi
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#f0f4f8',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    paddingTop: Platform.OS === 'ios' ? 50 : spacing.xxxl,
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.lg,
+    backgroundColor: '#ffffff',
+    paddingTop: Platform.OS === 'ios' ? 50 : 32,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#e2e8f0',
   },
   backBtn: {
     width: 40,
@@ -317,66 +333,65 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: '#0f172a',
   },
   scroll: {
     flex: 1,
   },
   section: {
-    marginTop: spacing.xl,
-    paddingHorizontal: spacing.lg,
+    marginTop: 20,
+    paddingHorizontal: 16,
   },
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textMuted,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
+    color: '#94a3b8',
+    marginBottom: 8,
+    marginLeft: 4,
     textTransform: 'uppercase',
   },
   card: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    ...shadows.sm,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 16,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    gap: 8,
+    marginBottom: 8,
   },
   rowLabel: {
     fontSize: 15,
     fontWeight: '500',
-    color: colors.textPrimary,
+    color: '#0f172a',
   },
   tokenText: {
     fontSize: 13,
-    color: colors.textMuted,
+    color: '#94a3b8',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    marginBottom: spacing.md,
+    marginBottom: 12,
   },
   tokenActions: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: 8,
   },
   tokenBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.sm,
-    gap: spacing.xs,
+    backgroundColor: '#0366d6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    gap: 4,
   },
   tokenBtnOutline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: '#0366d6',
   },
   tokenBtnDanger: {
-    backgroundColor: colors.accentRed,
+    backgroundColor: '#ef4444',
   },
   tokenBtnText: {
     color: '#fff',
@@ -384,7 +399,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   tokenBtnTextOutline: {
-    color: colors.primary,
+    color: '#0366d6',
   },
   aboutRow: {
     flexDirection: 'row',
@@ -394,26 +409,26 @@ const styles = StyleSheet.create({
   aboutLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 8,
   },
   aboutRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 8,
   },
   aboutLabel: {
     fontSize: 15,
-    color: colors.textPrimary,
+    color: '#0f172a',
   },
   aboutValue: {
     fontSize: 15,
-    color: colors.textMuted,
+    color: '#94a3b8',
   },
   updateBadge: {
     backgroundColor: '#fff3cd',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
   },
   updateBadgeText: {
     fontSize: 11,
@@ -424,18 +439,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: 12,
   },
   langText: {
     fontSize: 15,
-    color: colors.textPrimary,
+    color: '#0f172a',
   },
   langTextActive: {
-    color: colors.primary,
+    color: '#0366d6',
     fontWeight: '600',
   },
   langDivider: {
     height: 1,
-    backgroundColor: colors.borderLight,
+    backgroundColor: '#f1f5f9',
   },
 });
